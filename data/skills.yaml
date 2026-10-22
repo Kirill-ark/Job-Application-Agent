@@ -1,0 +1,102 @@
+# Skill vocabulary shared by CVs and vacancies.
+# Both sides are normalized to these canonical names before matching,
+# so "sklearn" in a vacancy matches "scikit-learn" in a CV.
+# Aliases are matched case-insensitively, so avoid aliases that are also common
+# English words in job ads ("CV" would match "send your CV", "REST" would match "the rest").
+
+# programming
+- name: Python
+  category: programming
+- name: SQL
+  category: programming
+- name: Java
+  category: programming
+- name: JavaScript
+  aliases: [JS]
+  category: programming
+- name: TypeScript
+  aliases: [TS]
+  category: programming
+- name: C++
+  aliases: [cpp]
+  category: programming
+
+# ml
+- name: Machine Learning
+  aliases: [ML]
+  category: ml
+- name: Deep Learning
+  aliases: [DL]
+  category: ml
+- name: NLP
+  aliases: [natural language processing]
+  category: ml
+- name: Computer Vision
+  aliases: [image recognition]
+  category: ml
+- name: LLM
+  aliases: [LLMs, large language models, GenAI, generative AI]
+  category: ml
+- name: RAG
+  aliases: [retrieval augmented generation, retrieval-augmented generation]
+  category: ml
+- name: PyTorch
+  aliases: [torch]
+  category: ml
+- name: TensorFlow
+  aliases: [tf, keras]
+  category: ml
+- name: scikit-learn
+  aliases: [sklearn, scikit learn]
+  category: ml
+- name: Hugging Face
+  aliases: [huggingface, transformers]
+  category: ml
+
+# data
+- name: pandas
+  category: data
+- name: NumPy
+  category: data
+- name: PostgreSQL
+  aliases: [postgres]
+  category: data
+- name: SQLite
+  category: data
+- name: Airflow
+  aliases: [apache airflow]
+  category: data
+- name: Spark
+  aliases: [pyspark, apache spark]
+  category: data
+
+# web
+- name: FastAPI
+  category: web
+- name: Flask
+  category: web
+- name: Django
+  category: web
+- name: REST API
+  aliases: [RESTful, REST APIs]
+  category: web
+
+# devops
+- name: Docker
+  category: devops
+- name: Kubernetes
+  aliases: [k8s]
+  category: devops
+- name: AWS
+  aliases: [amazon web services]
+  category: devops
+- name: CI/CD
+  aliases: [GitHub Actions, continuous integration]
+  category: devops
+- name: Linux
+  category: devops
+
+# tools
+- name: Git
+  aliases: [GitHub, GitLab]
+  category: tools

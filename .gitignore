@@ -20,3 +20,4 @@ wheels/
 .ruff_cache/
 .DS_Store
 .idea/
+.venv.nosync
