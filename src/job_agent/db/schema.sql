@@ -89,6 +89,8 @@ CREATE TABLE IF NOT EXISTS runs (
                 CHECK (status IN ('running', 'done', 'failed', 'limited')),
     ip_hash     TEXT,                           -- hash, never the raw IP
     trace       TEXT NOT NULL DEFAULT '[]',     -- JSON: list of steps
+    answer      TEXT,                           -- the agent's final message
+    error       TEXT,                           -- why the run failed
     is_demo     INTEGER NOT NULL DEFAULT 0 CHECK (is_demo IN (0, 1)),
     started_at  TEXT NOT NULL,
     finished_at TEXT

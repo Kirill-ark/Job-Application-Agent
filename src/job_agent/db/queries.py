@@ -1,7 +1,4 @@
-"""SQL queries. Each function takes an open connection and plain data.
-
-Queries for runs are added in the step that needs them.
-"""
+"""SQL queries. Each function takes an open connection and plain data."""
 
 import json
 import sqlite3
@@ -201,3 +198,49 @@ def approval_requests(
     else:
         rows = conn.execute(_REQUESTS + " AND r.draft_id = ? ORDER BY r.id", (draft_id,)).fetchall()
     return [_request_from_row(row) for row in rows]
+
+
+def create_run(
+    conn: sqlite3.Connection, goal: str, started_at: str, ip_hash: str | None = None
+) -> int:
+    """Start an agent run and return its id."""
+    with conn:
+        cursor = conn.execute(
+            "INSERT INTO runs (goal, ip_hash, started_at) VALUES (?, ?, ?)",
+            (goal, ip_hash, started_at),
+        )
+    return cursor.lastrowid
+
+
+def save_trace(conn: sqlite3.Connection, run_id: int, trace: list[dict[str, Any]]) -> None:
+    """Store the trace so far; called after every step, so the UI can show progress."""
+    with conn:
+        conn.execute(
+            "UPDATE runs SET trace = ? WHERE id = ?",
+            (json.dumps(trace, ensure_ascii=False), run_id),
+        )
+
+
+def finish_run(
+    conn: sqlite3.Connection,
+    run_id: int,
+    status: str,
+    finished_at: str,
+    answer: str | None = None,
+    error: str | None = None,
+) -> None:
+    with conn:
+        conn.execute(
+            "UPDATE runs SET status = ?, answer = ?, error = ?, finished_at = ? WHERE id = ?",
+            (status, answer, error, finished_at, run_id),
+        )
+
+
+def get_run(conn: sqlite3.Connection, run_id: int) -> dict[str, Any] | None:
+    row = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+    if row is None:
+        return None
+    run = dict(row)
+    run["trace"] = json.loads(run["trace"])
+    run["is_demo"] = bool(run["is_demo"])
+    return run

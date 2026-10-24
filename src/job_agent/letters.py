@@ -15,6 +15,7 @@ team"); the LLM judge in the evals measures that.
 """
 
 import json
+import logging
 import re
 import sqlite3
 from datetime import UTC, datetime
@@ -26,6 +27,8 @@ from job_agent.db.queries import get_vacancy, save_draft
 from job_agent.llm import Complete, LLMError
 from job_agent.matching import cv_hash, score_match
 from job_agent.skills import Taxonomy
+
+logger = logging.getLogger(__name__)
 
 # Groq's free tier allows 8,000 tokens per minute, so the vacancy text is cut.
 MAX_DESCRIPTION_CHARS = 1500
@@ -241,9 +244,12 @@ def write_letter(
         try:
             answer = complete(SYSTEM_PROMPT, user)
         except LLMError as error:
+            # Also raised when the API rejects an answer that breaks the schema.
+            # The details go to the log only: they can be long and are no use to the agent.
+            logger.warning("Letter attempt failed: %s", error)
             if best:
                 break  # keep the first letter if the repair call fails
-            raise LetterError(f"Could not write the letter: {error}") from error
+            continue
         try:
             letter = Letter.model_validate_json(answer)
         except ValidationError:
@@ -256,7 +262,10 @@ def write_letter(
             break
         user = repair_prompt(prompt, answer, [f"{i['sentence']!r} {i['problem']}" for i in issues])
     if best is None:
-        raise LetterError("The LLM did not return a letter in the expected format")
+        raise LetterError(
+            "Could not write the letter: the LLM failed or gave no valid letter twice. "
+            "Try again later or pick another vacancy."
+        )
     return best
 
 

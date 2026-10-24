@@ -4,6 +4,8 @@ Settings come from the environment (.env):
   CV_PATH        the CV to serve (default: data/cv.yaml, the example CV)
   DATABASE_PATH  the SQLite file (default: data/job_agent.db)
   GROQ_API_KEY   without it, scores get template reasons and letters are unavailable
+  GROQ_LETTER_MODEL  model for letters (default: openai/gpt-oss-20b)
+  REASONS_WITH_LLM   "0" for template reasons only; the agent sets it to save tokens
 
 stdout carries the MCP protocol, so logs go to stderr only.
 """
@@ -16,7 +18,7 @@ from dotenv import load_dotenv
 from job_agent.cv import DEFAULT_CV_PATH
 from job_agent.db import REPO_ROOT, default_db_path
 from job_agent.letters import LETTER_SCHEMA
-from job_agent.llm import LLMError, make_complete
+from job_agent.llm import DEFAULT_LETTER_MODEL, LLMError, make_complete
 from job_agent.mcp_server.server import build_server
 
 logger = logging.getLogger("job_agent.mcp_server")
@@ -29,8 +31,9 @@ def main() -> None:
     # such as Claude Desktop start the server from another folder.
     cv_path = REPO_ROOT / os.environ["CV_PATH"] if os.environ.get("CV_PATH") else DEFAULT_CV_PATH
     try:
-        reasons_llm = make_complete()
-        letter_llm = make_complete(max_tokens=2500, json_schema=LETTER_SCHEMA)
+        letter_model = os.environ.get("GROQ_LETTER_MODEL") or DEFAULT_LETTER_MODEL
+        letter_llm = make_complete(2500, LETTER_SCHEMA, model=letter_model)
+        reasons_llm = make_complete() if os.environ.get("REASONS_WITH_LLM") != "0" else None
     except LLMError as error:
         logger.warning("No LLM (%s): template reasons only, no letters", error)
         reasons_llm = letter_llm = None

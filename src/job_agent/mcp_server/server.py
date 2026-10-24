@@ -34,8 +34,10 @@ from job_agent.skills import Taxonomy, load_taxonomy
 
 INSTRUCTIONS = """Tools for a student looking for a job in Germany.
 Typical order: read_cv, search_jobs, score_match for the results,
-draft_cover_letter for the best matches, request_approval(mark_ready) for a draft.
+draft_cover_letter for the best matches (each draft waits for the user's approval).
 You never send anything: the user reviews, approves and sends letters themselves."""
+
+SNIPPET_FOR_MODEL = 150  # characters of the description in search results
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
@@ -108,7 +110,21 @@ def build_server(
             found = jobs.search_jobs(
                 conn, query, location, max(1, min(limit, 20)), level, client=http_client
             )
-        return {"count": len(found), "jobs": found}
+        # Short on purpose: the model only needs enough to pick what to score.
+        # URLs and dates stay in the database for the UI.
+        short = [
+            {
+                "id": job["id"],
+                "title": job["title"],
+                "company": job["company"],
+                "location": job["location"],
+                "remote": job["remote"],
+                "level": job["level"],
+                "snippet": job["snippet"][:SNIPPET_FOR_MODEL],
+            }
+            for job in found
+        ]
+        return {"count": len(short), "jobs": short}
 
     @server.tool(annotations=READ_ONLY)
     def read_cv() -> dict[str, Any]:
@@ -163,13 +179,16 @@ def build_server(
 
         Every sentence is checked against the CV. `grounded` is false when
         problems are left; they are listed in `issues` for the user. The draft
-        is only saved, never sent. Each call makes a new draft, so call it once
-        per vacancy.
+        is saved and put into the user's approval queue (mark_ready), never
+        sent. Each call makes a new draft, so call it once per vacancy.
         """
         if letter_llm is None:
             raise ToolError("Letters are not available: the LLM is not configured")
         with tool_errors(), database() as conn:
             result = letters.draft_cover_letter(conn, job_id, cv, taxonomy, letter_llm)
+            # Every draft waits for the user: queued here in code, so the agent
+            # cannot forget it and does not spend a step on it.
+            approval = approvals.request_approval(conn, "mark_ready", result["draft_id"])
         return {
             "draft_id": result["draft_id"],
             "job_id": result["job_id"],
@@ -178,6 +197,7 @@ def build_server(
             "letter": result["plain_text"],
             "grounded": result["grounded"],
             "issues": result["issues"],
+            "approval": approval["status"],
         }
 
     @server.tool()
@@ -185,9 +205,10 @@ def build_server(
         """Ask the user to approve an action on a draft. You cannot approve it yourself.
 
         Args:
-            action: "mark_ready" (the letter is final) or "export" (give the user the
-                text; only after mark_ready was approved). Sending, emailing or
-                applying is never possible and will be refused.
+            action: "mark_ready" (the letter is final; drafts are already queued for
+                this) or "export" (give the user the text; only after mark_ready was
+                approved). Sending, emailing or applying is never possible and will
+                be refused.
             draft_id: The `draft_id` returned by draft_cover_letter.
 
         The request waits for the user's decision in the UI. Do not ask again

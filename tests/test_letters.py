@@ -306,15 +306,25 @@ def test_invalid_json_gets_one_more_try(
 def test_invalid_json_twice_is_an_error(
     conn: sqlite3.Connection, cv: dict[str, Any], taxonomy: Taxonomy
 ) -> None:
-    with pytest.raises(LetterError, match="expected format"):
+    with pytest.raises(LetterError, match="no valid letter twice"):
         draft_cover_letter(conn, "ml-student", cv, taxonomy, FakeLLM("no", "still no"))
 
 
-def test_llm_failure_is_an_error(
+def test_llm_failure_gets_one_more_try(
     conn: sqlite3.Connection, cv: dict[str, Any], taxonomy: Taxonomy
 ) -> None:
-    with pytest.raises(LetterError, match="rate limit"):
-        draft_cover_letter(conn, "ml-student", cv, taxonomy, FakeLLM(LLMError("rate limit")))
+    # Groq also answers 400 when the model's JSON breaks the schema.
+    llm = FakeLLM(LLMError("400 json_validate_failed"), GOOD_LETTER)
+    assert draft_cover_letter(conn, "ml-student", cv, taxonomy, llm)["grounded"] is True
+
+
+def test_llm_failure_twice_is_a_short_error(
+    conn: sqlite3.Connection, cv: dict[str, Any], taxonomy: Taxonomy
+) -> None:
+    llm = FakeLLM(LLMError("400 " + "x" * 5000), LLMError("429 rate limit"))
+    with pytest.raises(LetterError) as error:
+        draft_cover_letter(conn, "ml-student", cv, taxonomy, llm)
+    assert "xxx" not in str(error.value)  # the raw provider error is not passed on
 
 
 def test_failed_repair_keeps_the_first_letter(

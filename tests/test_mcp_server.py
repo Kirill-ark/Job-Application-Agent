@@ -96,6 +96,8 @@ async def test_search_jobs(server: MCPServer) -> None:
         )
     assert result["jobs"][0]["id"] == JOB
     assert result["count"] == len(result["jobs"])
+    assert "url" not in result["jobs"][0]  # the UI takes it from the database
+    assert len(result["jobs"][0]["snippet"]) <= 150
 
 
 async def test_bad_level_is_explained(server: MCPServer) -> None:
@@ -109,6 +111,7 @@ async def test_whole_flow_up_to_the_approval(server: MCPServer) -> None:
         await call(client, "search_jobs", query="machine learning")
         match = await call(client, "score_match", job_id=JOB)
         draft = await call(client, "draft_cover_letter", job_id=JOB)
+        # Drafts are queued already: asking again returns the same request.
         approval = await call(
             client, "request_approval", action="mark_ready", draft_id=draft["draft_id"]
         )
@@ -116,7 +119,9 @@ async def test_whole_flow_up_to_the_approval(server: MCPServer) -> None:
     assert match["reasons"] == "Good fit."
     assert draft["grounded"] is True
     assert "[p1.f2]" not in draft["letter"]
+    assert draft["approval"] == "pending"
     assert approval["status"] == "pending"
+    assert approval["message"] == "Already waiting for the user's decision."
 
 
 async def test_unknown_job_is_explained(server: MCPServer) -> None:
