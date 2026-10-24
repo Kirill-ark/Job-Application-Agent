@@ -4,6 +4,7 @@ CVs and vacancies are both normalized to the same canonical names,
 so the overlap between them can be computed with plain set operations.
 """
 
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -28,6 +29,15 @@ class Skill(BaseModel):
     implies: list[str] = []  # broader skills this one proves
 
 
+def _pattern(skill: Skill) -> re.Pattern[str]:
+    # Longest names first, and no letter, digit, + or # on either side:
+    # "Java" must not match "JavaScript", "C" must not match "C++".
+    names = sorted([skill.name, *skill.aliases], key=len, reverse=True)
+    return re.compile(
+        r"(?<![\w+#])(" + "|".join(re.escape(n) for n in names) + r")(?![\w+#])", re.IGNORECASE
+    )
+
+
 class Taxonomy:
     """Looks up skills by name or alias, case-insensitively."""
 
@@ -42,6 +52,7 @@ class Taxonomy:
                         f"'{alias}' is used by both {self._by_alias[key]} and {skill.name}"
                     )
                 self._by_alias[key] = skill.name
+        self._patterns = {skill.name: _pattern(skill) for skill in skills}
         for skill in skills:
             for implied in skill.implies:
                 if implied not in self.skills:
@@ -51,6 +62,10 @@ class Taxonomy:
         """Return the canonical name for a skill, or the stripped input if it is unknown."""
         cleaned = raw.strip()
         return self._by_alias.get(cleaned.lower(), cleaned)
+
+    def find_in(self, text: str) -> list[str]:
+        """Canonical names of the skills a free text mentions, by name or alias."""
+        return [name for name, pattern in self._patterns.items() if pattern.search(text)]
 
     def implied(self, name: str) -> list[str]:
         """All broader skills a skill proves, following chains (PyTorch -> Deep Learning ->

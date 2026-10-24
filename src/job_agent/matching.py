@@ -86,14 +86,9 @@ def cv_hash(cv: dict[str, Any]) -> str:
 def find_skills(vacancy: dict[str, Any], taxonomy: Taxonomy) -> dict[str, int]:
     """Skills from the vocabulary that the vacancy mentions, with their weight."""
     body = " ".join([*vacancy["tags"], vacancy["description"]])
-    found: dict[str, int] = {}
-    for skill in taxonomy.skills.values():
-        names = sorted([skill.name, *skill.aliases], key=len, reverse=True)
-        pattern = r"(?<![\w+#])(" + "|".join(re.escape(n) for n in names) + r")(?![\w+#])"
-        if re.search(pattern, vacancy["title"], re.IGNORECASE):
-            found[skill.name] = TITLE_SKILL_WEIGHT
-        elif re.search(pattern, body, re.IGNORECASE):
-            found[skill.name] = 1
+    found = dict.fromkeys(taxonomy.find_in(body), 1)
+    for skill in taxonomy.find_in(vacancy["title"]):
+        found[skill] = TITLE_SKILL_WEIGHT
     return found
 
 

@@ -6,6 +6,7 @@ Every statement a cover letter may use is a fact with an ID:
   ed1               - education entry 1
   lang1             - spoken language 1
   sk                - other (unverified) skills
+  av                - availability
 IDs come from the position in the file, so nobody has to write them by hand.
 """
 
@@ -110,6 +111,8 @@ def fact_table(cv: CV) -> dict[str, str]:
         )
     for i, spoken in enumerate(cv.languages, start=1):
         facts[f"lang{i}"] = f"{spoken.language}: {spoken.level}"
+    if cv.availability:
+        facts["av"] = f"Availability: {cv.availability}"
     if cv.other_skills:
         facts["sk"] = f"Other skills, not used in a project or job: {', '.join(cv.other_skills)}"
     return facts

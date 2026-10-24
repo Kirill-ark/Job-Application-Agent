@@ -1,7 +1,6 @@
 """SQL queries. Each function takes an open connection and plain data.
 
-Queries for drafts, approvals and runs are added in the steps
-that need them.
+Queries for approvals and runs are added in the steps that need them.
 """
 
 import json
@@ -111,3 +110,33 @@ def save_score(conn: sqlite3.Connection, score: dict[str, Any]) -> None:
                 "gaps": json.dumps(score["gaps"]),
             },
         )
+
+
+def save_draft(conn: sqlite3.Connection, draft: dict[str, Any]) -> int:
+    """Store a new cover letter draft and return its id. Older drafts are kept."""
+    with conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO drafts (vacancy_id, cv_hash, text, cited_facts, issues,
+                                created_at, updated_at)
+            VALUES (:vacancy_id, :cv_hash, :text, :cited_facts, :issues,
+                    :created_at, :created_at)
+            """,
+            {
+                **draft,
+                "cited_facts": json.dumps(draft["cited_facts"], ensure_ascii=False),
+                "issues": json.dumps(draft["issues"], ensure_ascii=False),
+            },
+        )
+    return cursor.lastrowid
+
+
+def get_draft(conn: sqlite3.Connection, draft_id: int) -> dict[str, Any] | None:
+    """Return one draft, or None if there is no draft with this id."""
+    row = conn.execute("SELECT * FROM drafts WHERE id = ?", (draft_id,)).fetchone()
+    if row is None:
+        return None
+    draft = dict(row)
+    for column in ("cited_facts", "issues"):
+        draft[column] = json.loads(draft[column])
+    return draft

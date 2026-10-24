@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS drafts (
     text        TEXT NOT NULL,
     edited_text TEXT,                           -- the user's edit, if any
     cited_facts TEXT NOT NULL,                  -- JSON: {fact_id: fact text}
+    issues      TEXT NOT NULL DEFAULT '[]',     -- JSON: groundedness problems left after repair
     status      TEXT NOT NULL DEFAULT 'draft'
                 CHECK (status IN ('draft', 'approved', 'rejected')),
     created_at  TEXT NOT NULL,
