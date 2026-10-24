@@ -25,6 +25,7 @@ class Skill(BaseModel):
     name: str
     category: Category
     aliases: list[str] = []
+    implies: list[str] = []  # broader skills this one proves
 
 
 class Taxonomy:
@@ -41,11 +42,27 @@ class Taxonomy:
                         f"'{alias}' is used by both {self._by_alias[key]} and {skill.name}"
                     )
                 self._by_alias[key] = skill.name
+        for skill in skills:
+            for implied in skill.implies:
+                if implied not in self.skills:
+                    raise TaxonomyError(f"{skill.name} implies unknown skill '{implied}'")
 
     def normalize(self, raw: str) -> str:
         """Return the canonical name for a skill, or the stripped input if it is unknown."""
         cleaned = raw.strip()
         return self._by_alias.get(cleaned.lower(), cleaned)
+
+    def implied(self, name: str) -> list[str]:
+        """All broader skills a skill proves, following chains (PyTorch -> Deep Learning ->
+        Machine Learning). Unknown skills imply nothing."""
+        found: list[str] = []
+        todo = list(self.skills[name].implies) if name in self.skills else []
+        while todo:
+            implied = todo.pop(0)
+            if implied not in found and implied != name:
+                found.append(implied)
+                todo.extend(self.skills[implied].implies)
+        return found
 
     def category(self, name: str) -> str:
         """Return the category of a canonical skill, or 'other' if it is unknown."""

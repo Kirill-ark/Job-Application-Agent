@@ -46,8 +46,15 @@ def taxonomy() -> Taxonomy:
     return Taxonomy(
         [
             Skill(name="Python", category="programming"),
-            Skill(name="scikit-learn", category="ml", aliases=["sklearn"]),
-            Skill(name="Kubernetes", category="devops"),
+            Skill(
+                name="scikit-learn",
+                category="ml",
+                aliases=["sklearn"],
+                implies=["Machine Learning"],
+            ),
+            Skill(name="Machine Learning", category="ml"),
+            Skill(name="Kubernetes", category="devops", implies=["Docker"]),
+            Skill(name="Docker", category="devops"),
         ]
     )
 
@@ -87,6 +94,13 @@ def test_skill_index_normalizes_aliases(tmp_path: Path, taxonomy: Taxonomy) -> N
     skills = skill_index(load_cv(write(tmp_path, FULL_CV)), taxonomy)
     assert "sklearn" not in skills
     assert skills["scikit-learn"]["evidence"] == ["p1"]
+
+
+def test_implied_skills_inherit_evidence(tmp_path: Path, taxonomy: Taxonomy) -> None:
+    skills = skill_index(load_cv(write(tmp_path, FULL_CV)), taxonomy)
+    assert skills["Machine Learning"] == {"category": "ml", "evidence": ["p1"], "verified": True}
+    # implied by an unverified skill stays unverified
+    assert skills["Docker"] == {"category": "devops", "evidence": [], "verified": False}
 
 
 def test_other_skills_are_unverified(tmp_path: Path, taxonomy: Taxonomy) -> None:

@@ -11,6 +11,7 @@ from job_agent.db.queries import upsert_vacancies
 from job_agent.llm import LLMError
 from job_agent.matching import (
     MatchError,
+    combine,
     cv_hash,
     find_skills,
     german_component,
@@ -119,7 +120,8 @@ def test_find_skills_respects_word_boundaries(taxonomy: Taxonomy) -> None:
 def test_skills_component(cv: dict[str, Any]) -> None:
     wanted = {"PyTorch": 2, "scikit-learn": 1, "Kubernetes": 1, "AWS": 1}
     value, matched, gaps = skills_component(wanted, cv["skills"])
-    assert value == pytest.approx((2 + 1 + 0.5) / 5)  # Kubernetes is unverified, AWS missing
+    # Kubernetes is unverified (0.5), AWS is missing; smoothing adds 0.5 * 2 on top and 2 below
+    assert value == pytest.approx((2 + 1 + 0.5 + 1) / (5 + 2))
     assert [m["skill"] for m in matched] == ["PyTorch", "scikit-learn"]
     assert matched[0]["evidence"] == ["p1"]
     assert gaps == ["AWS", "Kubernetes (listed in the CV, but not used in a project or job)"]
@@ -180,6 +182,19 @@ def test_location_component() -> None:
     assert location_component(make_vacancy(location=""), "Berlin") == 0.5
 
 
+def test_combine_multiplies_factors() -> None:
+    perfect = {"skills": 1.0, "level": 1.0, "german": 1.0, "location": 1.0}
+    assert combine(perfect) == 100
+    assert combine({**perfect, "level": 0.0}) == 30  # senior role: level floor 0.3
+    assert combine({**perfect, "german": 0.0, "location": 0.0}) == 25  # 0.5 * 0.5
+    assert combine({**perfect, "skills": 0.5, "level": 0.5}) == 32  # 0.5 * 0.65
+
+
+def test_one_matched_skill_is_not_a_perfect_fit(cv: dict[str, Any]) -> None:
+    value, _, _ = skills_component({"PyTorch": 1}, cv["skills"])
+    assert value == pytest.approx(2 / 3)
+
+
 def test_label_thresholds() -> None:
     assert [label(s) for s in (100, 65, 64, 40, 39, 0)] == [
         "good",
@@ -198,9 +213,9 @@ def test_score_match_end_to_end(
     conn: sqlite3.Connection, cv: dict[str, Any], taxonomy: Taxonomy
 ) -> None:
     result = score_match(conn, "ml-student", cv, taxonomy, complete=FakeLLM())
-    # skills: PyTorch 2 + Python 1 + scikit-learn 1 + Kubernetes 0.5 of 5 = 0.9
-    assert result["components"] == {"skills": 0.9, "level": 1.0, "german": 1.0, "location": 1.0}
-    assert result["score"] == 94  # 100 * (0.6 * 0.9 + 0.2 + 0.1 + 0.1)
+    # skills: (PyTorch 2 + Python 1 + scikit-learn 1 + Kubernetes 0.5 + prior 1) / (5 + 2)
+    assert result["components"] == {"skills": 0.79, "level": 1.0, "german": 1.0, "location": 1.0}
+    assert result["score"] == 79  # all factors are 1.0
     assert result["label"] == "good"
     assert result["reasons"] == "Strong fit thanks to PyTorch."
 
@@ -251,8 +266,8 @@ def test_llm_failure_falls_back_to_template(
     conn: sqlite3.Connection, cv: dict[str, Any], taxonomy: Taxonomy
 ) -> None:
     result = score_match(conn, "ml-student", cv, taxonomy, complete=FakeLLM(fail=True))
-    assert result["score"] == 94
-    assert result["reasons"].startswith("Good match (94/100). Matches: PyTorch, Python")
+    assert result["score"] == 79
+    assert result["reasons"].startswith("Good match (79/100). Matches: PyTorch, Python")
 
 
 def test_without_llm_uses_template(

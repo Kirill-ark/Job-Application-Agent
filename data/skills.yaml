@@ -5,6 +5,9 @@
 # English words in job ads ("CV" would match "send your CV", "REST" would match "the rest").
 # For the same reason some real skills are left out on purpose: Go, R, Swift,
 # Spring, Helm. Chosen from the most frequent terms in ~1,500 Arbeitnow vacancies.
+#
+# `implies` lists broader skills that a skill proves: a PyTorch project is also
+# Deep Learning and Machine Learning experience, even if the CV does not say so.
 
 # programming
 - name: Python
@@ -19,6 +22,7 @@
 - name: TypeScript
   aliases: [TS]
   category: programming
+  implies: [JavaScript]
 - name: C++
   aliases: [cpp]
   category: programming
@@ -44,6 +48,7 @@
 - name: Deep Learning
   aliases: [DL]
   category: ml
+  implies: [Machine Learning]
 - name: Data Science
   category: ml
 - name: Statistics
@@ -52,68 +57,90 @@
 - name: NLP
   aliases: [natural language processing]
   category: ml
+  implies: [Machine Learning]
 - name: Computer Vision
   aliases: [image recognition]
   category: ml
+  implies: [Machine Learning]
 - name: LLM
   aliases: [LLMs, large language models, GenAI, generative AI]
   category: ml
 - name: RAG
   aliases: [retrieval augmented generation, retrieval-augmented generation]
   category: ml
+  implies: [LLM]
 - name: AI Agents
   aliases: [agentic, AI agent, LLM agents, multi-agent]
   category: ml
+  implies: [LLM]
 - name: Prompt Engineering
   category: ml
+  implies: [LLM]
 - name: Fine-tuning
   aliases: [fine tuning, finetuning]
   category: ml
+  implies: [Machine Learning]
 - name: Embeddings
   aliases: [vector search, vector database]
   category: ml
 - name: MLOps
   category: ml
+  implies: [Machine Learning]
 - name: Reinforcement Learning
   category: ml
+  implies: [Machine Learning]
 - name: PyTorch
   aliases: [torch]
   category: ml
+  implies: [Deep Learning, Python]
 - name: TensorFlow
   aliases: [tf, keras]
   category: ml
+  implies: [Deep Learning, Python]
 - name: scikit-learn
   aliases: [sklearn, scikit learn]
   category: ml
+  implies: [Machine Learning, Python]
 - name: Hugging Face
   aliases: [huggingface, transformers]
   category: ml
+  implies: [Deep Learning]
 - name: LangChain
   aliases: [LangGraph]
   category: ml
+  implies: [LLM]
 - name: LlamaIndex
   category: ml
+  implies: [LLM, RAG]
 - name: OpenAI API
   aliases: [OpenAI]
   category: ml
+  implies: [LLM]
 - name: XGBoost
   aliases: [LightGBM, gradient boosting]
   category: ml
+  implies: [Machine Learning]
 - name: MLflow
   category: ml
+  implies: [MLOps]
 
 # data
 - name: pandas
   category: data
+  implies: [Python]
 - name: NumPy
   category: data
+  implies: [Python]
 - name: PostgreSQL
   aliases: [postgres]
   category: data
+  implies: [SQL]
 - name: MySQL
   category: data
+  implies: [SQL]
 - name: SQLite
   category: data
+  implies: [SQL]
 - name: MongoDB
   category: data
 - name: Redis
@@ -131,10 +158,13 @@
   category: data
 - name: dbt
   category: data
+  implies: [SQL]
 - name: Snowflake
   category: data
+  implies: [SQL]
 - name: BigQuery
   category: data
+  implies: [SQL]
 - name: Databricks
   category: data
 - name: ETL
@@ -154,10 +184,13 @@
 # web
 - name: FastAPI
   category: web
+  implies: [Python, REST API]
 - name: Flask
   category: web
+  implies: [Python, REST API]
 - name: Django
   category: web
+  implies: [Python]
 - name: REST API
   aliases: [RESTful, REST APIs]
   category: web
@@ -169,17 +202,22 @@
 - name: React
   aliases: [React.js, ReactJS]
   category: web
+  implies: [JavaScript]
 - name: Vue
   aliases: [Vue.js]
   category: web
+  implies: [JavaScript]
 - name: Angular
   category: web
+  implies: [TypeScript]
 - name: Node.js
   aliases: [NodeJS]
   category: web
+  implies: [JavaScript]
 - name: Next.js
   aliases: [NextJS]
   category: web
+  implies: [React]
 
 # devops
 - name: Docker

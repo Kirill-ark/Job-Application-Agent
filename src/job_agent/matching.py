@@ -2,11 +2,17 @@
 
 Hybrid by design:
 - The score is computed by plain code from four components, so it is stable,
-  testable and explainable.
+  testable and explainable:
+
+      score = 100 * skills * level_factor * german_factor * location_factor
+
+  Skills decide how good the fit is; the other three can only lower it. A
+  multiplication means one hard mismatch (a senior role for a student) pulls
+  the score down whatever the skills are.
 - The LLM only writes a short explanation of that score. If the LLM is not
   available, a template writes it instead, so scoring never fails.
 
-The weights and thresholds are starting values; the evals in step 10 tune them
+The floors, smoothing and thresholds are starting values; the evals in step 10 tune them
 against hand-labeled vacancies.
 """
 
@@ -22,10 +28,16 @@ from job_agent.llm import Complete, LLMError
 from job_agent.skills import Taxonomy
 
 # Change this when the scoring logic changes, so cached scores are not reused.
-SCORING_VERSION = "1"
+SCORING_VERSION = "2"
 
-WEIGHTS = {"skills": 0.6, "level": 0.2, "german": 0.1, "location": 0.1}
+# A component value of 0 turns into this factor, a value of 1 into 1.0.
+FACTOR_FLOORS = {"level": 0.3, "german": 0.5, "location": 0.5}
 GOOD_FROM, MAYBE_FROM = 65, 40
+
+# Smoothing: the skill share is pulled toward 0.5 as if the vacancy also had
+# this much weight of skills we know nothing about. With one matched skill out
+# of one, the share is (1 + 1) / (1 + 2) = 0.67, not 1.0.
+PRIOR_WEIGHT = 2
 
 TITLE_SKILL_WEIGHT = 2  # a skill in the title counts double
 UNVERIFIED_CREDIT = 0.5  # skill only listed in other_skills
@@ -88,7 +100,10 @@ def find_skills(vacancy: dict[str, Any], taxonomy: Taxonomy) -> dict[str, int]:
 def skills_component(
     wanted: dict[str, int], cv_skills: dict[str, dict[str, Any]]
 ) -> tuple[float, list[dict[str, Any]], list[str]]:
-    """Weighted share of the vacancy's skills that the CV has. Returns (value, matched, gaps)."""
+    """Smoothed weighted share of the vacancy's skills that the CV has.
+
+    Returns (value, matched, gaps).
+    """
     if not wanted:
         return NO_INFORMATION, [], ["The vacancy names no skills we can compare"]
     earned = 0.0
@@ -103,7 +118,8 @@ def skills_component(
             gaps.append(f"{skill} (listed in the CV, but not used in a project or job)")
         else:
             gaps.append(skill)
-    return earned / sum(wanted.values()), matched, gaps
+    value = (earned + NO_INFORMATION * PRIOR_WEIGHT) / (sum(wanted.values()) + PRIOR_WEIGHT)
+    return value, matched, gaps
 
 
 def level_component(vacancy_level: str, looking_for: list[str]) -> float:
@@ -147,6 +163,18 @@ def location_component(vacancy: dict[str, Any], cv_location: str) -> float:
     if not vacancy["location"]:
         return NO_INFORMATION
     return 1.0 if cv_location.lower() in vacancy["location"].lower() else 0.0
+
+
+def factor(name: str, value: float) -> float:
+    floor = FACTOR_FLOORS[name]
+    return floor + (1 - floor) * value
+
+
+def combine(components: dict[str, float]) -> int:
+    total = components["skills"]
+    for name in FACTOR_FLOORS:
+        total *= factor(name, components[name])
+    return round(100 * total)
 
 
 def label(score: int) -> str:
@@ -227,7 +255,7 @@ def score_match(
             "german": german,
             "location": location_component(vacancy, cv["location"]),
         }
-        score = round(100 * sum(WEIGHTS[name] * value for name, value in components.items()))
+        score = combine(components)
         cached = {
             "vacancy_id": job_id,
             "cv_hash": fingerprint,

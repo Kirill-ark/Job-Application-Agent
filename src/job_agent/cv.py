@@ -118,7 +118,8 @@ def fact_table(cv: CV) -> dict[str, str]:
 def skill_index(cv: CV, taxonomy: Taxonomy) -> dict[str, dict[str, Any]]:
     """Map each canonical skill to its category and the fact IDs that prove it.
 
-    A skill is verified when at least one project or job used it.
+    A skill is verified when at least one project or job used it, directly or
+    through a skill that implies it.
     """
     evidence: dict[str, list[str]] = {}
     for i, project in enumerate(cv.projects, start=1):
@@ -129,6 +130,10 @@ def skill_index(cv: CV, taxonomy: Taxonomy) -> dict[str, dict[str, Any]]:
             evidence.setdefault(taxonomy.normalize(raw), []).append(f"e{i}")
     for raw in cv.other_skills:
         evidence.setdefault(taxonomy.normalize(raw), [])
+    # Broader skills inherit the evidence: a PyTorch project proves Machine Learning too.
+    for skill, ids in list(evidence.items()):
+        for implied in taxonomy.implied(skill):
+            evidence.setdefault(implied, []).extend(ids)
 
     return {
         skill: {

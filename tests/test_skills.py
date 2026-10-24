@@ -48,3 +48,21 @@ def test_project_vocabulary_loads() -> None:
     taxonomy = load_taxonomy()
     assert taxonomy.normalize("torch") == "PyTorch"
     assert taxonomy.category("PyTorch") == "ml"
+
+
+def test_implied_follows_chains() -> None:
+    taxonomy = Taxonomy(
+        [
+            Skill(name="PyTorch", category="ml", implies=["Deep Learning"]),
+            Skill(name="Deep Learning", category="ml", implies=["Machine Learning"]),
+            Skill(name="Machine Learning", category="ml"),
+        ]
+    )
+    assert taxonomy.implied("PyTorch") == ["Deep Learning", "Machine Learning"]
+    assert taxonomy.implied("Machine Learning") == []
+    assert taxonomy.implied("Unknown") == []
+
+
+def test_implying_an_unknown_skill_is_an_error() -> None:
+    with pytest.raises(TaxonomyError, match="implies unknown skill 'Nope'"):
+        Taxonomy([Skill(name="PyTorch", category="ml", implies=["Nope"])])
