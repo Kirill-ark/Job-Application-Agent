@@ -1,6 +1,6 @@
 """SQL queries. Each function takes an open connection and plain data.
 
-Queries for approvals and runs are added in the steps that need them.
+Queries for runs are added in the step that needs them.
 """
 
 import json
@@ -140,3 +140,64 @@ def get_draft(conn: sqlite3.Connection, draft_id: int) -> dict[str, Any] | None:
     for column in ("cited_facts", "issues"):
         draft[column] = json.loads(draft[column])
     return draft
+
+
+def set_draft_status(
+    conn: sqlite3.Connection, draft_id: int, status: str, now: str, edited_text: str | None = None
+) -> None:
+    """Change a draft's status; keep the earlier edit unless a new one is given."""
+    conn.execute(
+        """
+        UPDATE drafts SET status = ?, edited_text = COALESCE(?, edited_text), updated_at = ?
+        WHERE id = ?
+        """,
+        (status, edited_text, now, draft_id),
+    )
+
+
+def add_approval_event(conn: sqlite3.Connection, event: dict[str, Any]) -> int:
+    """Append one row to the approval log and return its id."""
+    cursor = conn.execute(
+        """
+        INSERT INTO approvals (request_id, draft_id, action, event, comment, created_at)
+        VALUES (:request_id, :draft_id, :action, :event, :comment, :created_at)
+        """,
+        {"request_id": None, "comment": None, **event},
+    )
+    return cursor.lastrowid
+
+
+# Every request with its decision, if there is one.
+_REQUESTS = """
+    SELECT r.id, r.draft_id, r.action, r.event, r.comment, r.created_at,
+           d.event AS decision, d.comment AS decision_comment, d.created_at AS decided_at
+    FROM approvals r
+    LEFT JOIN approvals d ON d.request_id = r.id
+    WHERE r.request_id IS NULL
+"""
+
+
+def _request_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    request = dict(row)
+    if request["event"] == "refused":
+        request["status"] = "refused"
+    else:
+        request["status"] = request["decision"] or "pending"
+    return request
+
+
+def get_approval_request(conn: sqlite3.Connection, request_id: int) -> dict[str, Any] | None:
+    """One request with its current status: pending, approved, rejected or refused."""
+    row = conn.execute(_REQUESTS + " AND r.id = ?", (request_id,)).fetchone()
+    return _request_from_row(row) if row else None
+
+
+def approval_requests(
+    conn: sqlite3.Connection, draft_id: int | None = None
+) -> list[dict[str, Any]]:
+    """All requests, oldest first, optionally for one draft."""
+    if draft_id is None:
+        rows = conn.execute(_REQUESTS + " ORDER BY r.id").fetchall()
+    else:
+        rows = conn.execute(_REQUESTS + " AND r.draft_id = ? ORDER BY r.id", (draft_id,)).fetchall()
+    return [_request_from_row(row) for row in rows]

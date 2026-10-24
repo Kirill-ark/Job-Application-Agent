@@ -98,7 +98,7 @@ def test_score_must_be_between_0_and_100(conn: sqlite3.Connection) -> None:
         )
 
 
-def test_approval_decision_is_checked(conn: sqlite3.Connection) -> None:
+def test_approval_event_is_checked(conn: sqlite3.Connection) -> None:
     upsert_vacancies(conn, [make_vacancy()])
     conn.execute(
         "INSERT INTO drafts (vacancy_id, cv_hash, text, cited_facts, created_at, updated_at)"
@@ -107,7 +107,7 @@ def test_approval_decision_is_checked(conn: sqlite3.Connection) -> None:
     )
     with pytest.raises(sqlite3.IntegrityError):
         conn.execute(
-            "INSERT INTO approvals (draft_id, action, decision, decided_at)"
+            "INSERT INTO approvals (draft_id, action, event, created_at)"
             " VALUES (1, 'export', 'maybe', ?)",
             (NOW,),
         )

@@ -49,15 +49,37 @@ CREATE TABLE IF NOT EXISTS drafts (
     updated_at  TEXT NOT NULL
 );
 
--- Human decisions. Rows are only ever added, never changed.
+-- Approval log. Rows are only ever added: the triggers below forbid UPDATE and DELETE.
+-- A request ('requested' or 'refused') comes from the agent; a decision
+-- ('approved' or 'rejected') comes from the human and points to its request.
+-- A request with no decision row is pending.
 CREATE TABLE IF NOT EXISTS approvals (
     id          INTEGER PRIMARY KEY,
+    request_id  INTEGER REFERENCES approvals (id),  -- set on decisions only
     draft_id    INTEGER NOT NULL REFERENCES drafts (id),
-    action      TEXT NOT NULL CHECK (action IN ('mark_ready', 'export')),
-    decision    TEXT NOT NULL CHECK (decision IN ('approved', 'rejected')),
+    action      TEXT NOT NULL,
+    event       TEXT NOT NULL
+                CHECK (event IN ('requested', 'refused', 'approved', 'rejected')),
     comment     TEXT,
-    decided_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    -- Unknown actions ('send', ...) can only be logged as refused.
+    CHECK (event = 'refused' OR action IN ('mark_ready', 'export')),
+    CHECK ((request_id IS NULL) = (event IN ('requested', 'refused')))
 );
+
+-- One decision per request: deciding twice is an error.
+CREATE UNIQUE INDEX IF NOT EXISTS one_decision_per_request
+    ON approvals (request_id) WHERE request_id IS NOT NULL;
+
+CREATE TRIGGER IF NOT EXISTS approvals_no_update BEFORE UPDATE ON approvals
+BEGIN
+    SELECT RAISE(ABORT, 'the approval log is append-only');
+END;
+
+CREATE TRIGGER IF NOT EXISTS approvals_no_delete BEFORE DELETE ON approvals
+BEGIN
+    SELECT RAISE(ABORT, 'the approval log is append-only');
+END;
 
 -- Agent runs: the trace of every step, rate limiting and the saved demo run.
 CREATE TABLE IF NOT EXISTS runs (
