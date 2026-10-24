@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS scores (
     vacancy_id  TEXT NOT NULL REFERENCES vacancies (id),
     cv_hash     TEXT NOT NULL,
     score       INTEGER NOT NULL CHECK (score BETWEEN 0 AND 100),
+    components  TEXT NOT NULL,                  -- JSON: {skills, level, german, location}
     matched     TEXT NOT NULL,                  -- JSON: [{skill, evidence}]
     gaps        TEXT NOT NULL,                  -- JSON: [skill or requirement]
     reasons     TEXT NOT NULL,

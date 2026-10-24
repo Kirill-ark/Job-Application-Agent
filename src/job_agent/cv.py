@@ -20,7 +20,8 @@ from job_agent.skills import Taxonomy, load_taxonomy
 DEFAULT_CV_PATH = Path(__file__).parents[2] / "data" / "cv.yaml"
 
 YearMonth = Annotated[str, StringConstraints(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")]
-Level = Literal["A1", "A2", "B1", "B2", "C1", "C2", "native"]
+LanguageLevel = Literal["A1", "A2", "B1", "B2", "C1", "C2", "native"]
+JobLevel = Literal["student", "intern", "entry", "experienced"]
 
 
 class CVError(Exception):
@@ -57,7 +58,7 @@ class Project(Strict):
 
 class SpokenLanguage(Strict):
     language: str
-    level: Level
+    level: LanguageLevel
 
 
 class CV(Strict):
@@ -65,6 +66,7 @@ class CV(Strict):
     headline: str
     location: str
     availability: str | None = None
+    looking_for: list[JobLevel] = ["student", "intern"]  # vacancy levels that fit
     education: list[Education] = []
     experience: list[Job] = []
     projects: list[Project] = []
@@ -150,6 +152,8 @@ def read_cv(path: Path = DEFAULT_CV_PATH, taxonomy: Taxonomy | None = None) -> d
         "headline": cv.headline,
         "location": cv.location,
         "availability": cv.availability,
+        "looking_for": cv.looking_for,
+        "languages": [spoken.model_dump() for spoken in cv.languages],
         "facts": fact_table(cv),
         "skills": skill_index(cv, taxonomy),
     }

@@ -1,6 +1,6 @@
 """SQL queries. Each function takes an open connection and plain data.
 
-Queries for scores, drafts, approvals and runs are added in the steps
+Queries for drafts, approvals and runs are added in the steps
 that need them.
 """
 
@@ -72,3 +72,42 @@ def current_vacancies(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         "SELECT * FROM vacancies WHERE fetched_at = (SELECT MAX(fetched_at) FROM vacancies)"
     ).fetchall()
     return [_vacancy_from_row(row) for row in rows]
+
+
+def get_score(conn: sqlite3.Connection, vacancy_id: str, cv_hash: str) -> dict[str, Any] | None:
+    """Return the cached match result for this vacancy and CV, or None."""
+    row = conn.execute(
+        "SELECT * FROM scores WHERE vacancy_id = ? AND cv_hash = ?", (vacancy_id, cv_hash)
+    ).fetchone()
+    if row is None:
+        return None
+    score = dict(row)
+    for column in ("components", "matched", "gaps"):
+        score[column] = json.loads(score[column])
+    return score
+
+
+def save_score(conn: sqlite3.Connection, score: dict[str, Any]) -> None:
+    """Store a match result, replacing an older one for the same vacancy and CV."""
+    with conn:
+        conn.execute(
+            """
+            INSERT INTO scores (vacancy_id, cv_hash, score, components, matched, gaps,
+                                reasons, created_at)
+            VALUES (:vacancy_id, :cv_hash, :score, :components, :matched, :gaps,
+                    :reasons, :created_at)
+            ON CONFLICT (vacancy_id, cv_hash) DO UPDATE SET
+                score = excluded.score,
+                components = excluded.components,
+                matched = excluded.matched,
+                gaps = excluded.gaps,
+                reasons = excluded.reasons,
+                created_at = excluded.created_at
+            """,
+            {
+                **score,
+                "components": json.dumps(score["components"]),
+                "matched": json.dumps(score["matched"]),
+                "gaps": json.dumps(score["gaps"]),
+            },
+        )

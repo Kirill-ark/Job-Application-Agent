@@ -3,6 +3,8 @@
 # so "sklearn" in a vacancy matches "scikit-learn" in a CV.
 # Aliases are matched case-insensitively, so avoid aliases that are also common
 # English words in job ads ("CV" would match "send your CV", "REST" would match "the rest").
+# For the same reason some real skills are left out on purpose: Go, R, Swift,
+# Spring, Helm. Chosen from the most frequent terms in ~1,500 Arbeitnow vacancies.
 
 # programming
 - name: Python
@@ -20,13 +22,32 @@
 - name: C++
   aliases: [cpp]
   category: programming
+- name: C#
+  aliases: [.NET, dotnet]
+  category: programming
+- name: Kotlin
+  category: programming
+- name: Rust
+  category: programming
+- name: Scala
+  category: programming
+- name: PHP
+  category: programming
+- name: Bash
+  aliases: [shell scripting]
+  category: programming
 
 # ml
 - name: Machine Learning
-  aliases: [ML]
+  aliases: [ML, maschinelles Lernen]
   category: ml
 - name: Deep Learning
   aliases: [DL]
+  category: ml
+- name: Data Science
+  category: ml
+- name: Statistics
+  aliases: [Statistik, statistical modeling]
   category: ml
 - name: NLP
   aliases: [natural language processing]
@@ -40,6 +61,21 @@
 - name: RAG
   aliases: [retrieval augmented generation, retrieval-augmented generation]
   category: ml
+- name: AI Agents
+  aliases: [agentic, AI agent, LLM agents, multi-agent]
+  category: ml
+- name: Prompt Engineering
+  category: ml
+- name: Fine-tuning
+  aliases: [fine tuning, finetuning]
+  category: ml
+- name: Embeddings
+  aliases: [vector search, vector database]
+  category: ml
+- name: MLOps
+  category: ml
+- name: Reinforcement Learning
+  category: ml
 - name: PyTorch
   aliases: [torch]
   category: ml
@@ -52,6 +88,19 @@
 - name: Hugging Face
   aliases: [huggingface, transformers]
   category: ml
+- name: LangChain
+  aliases: [LangGraph]
+  category: ml
+- name: LlamaIndex
+  category: ml
+- name: OpenAI API
+  aliases: [OpenAI]
+  category: ml
+- name: XGBoost
+  aliases: [LightGBM, gradient boosting]
+  category: ml
+- name: MLflow
+  category: ml
 
 # data
 - name: pandas
@@ -61,13 +110,45 @@
 - name: PostgreSQL
   aliases: [postgres]
   category: data
+- name: MySQL
+  category: data
 - name: SQLite
+  category: data
+- name: MongoDB
+  category: data
+- name: Redis
+  category: data
+- name: Elasticsearch
   category: data
 - name: Airflow
   aliases: [apache airflow]
   category: data
-- name: Spark
-  aliases: [pyspark, apache spark]
+- name: Apache Spark
+  aliases: [pyspark, spark sql]
+  category: data
+- name: Kafka
+  aliases: [apache kafka]
+  category: data
+- name: dbt
+  category: data
+- name: Snowflake
+  category: data
+- name: BigQuery
+  category: data
+- name: Databricks
+  category: data
+- name: ETL
+  aliases: [ELT, data pipelines]
+  category: data
+- name: Data Warehouse
+  aliases: [data warehousing]
+  category: data
+- name: Power BI
+  aliases: [PowerBI]
+  category: data
+- name: Tableau
+  category: data
+- name: Looker
   category: data
 
 # web
@@ -80,6 +161,25 @@
 - name: REST API
   aliases: [RESTful, REST APIs]
   category: web
+- name: GraphQL
+  category: web
+- name: Microservices
+  aliases: [microservice]
+  category: web
+- name: React
+  aliases: [React.js, ReactJS]
+  category: web
+- name: Vue
+  aliases: [Vue.js]
+  category: web
+- name: Angular
+  category: web
+- name: Node.js
+  aliases: [NodeJS]
+  category: web
+- name: Next.js
+  aliases: [NextJS]
+  category: web
 
 # devops
 - name: Docker
@@ -90,13 +190,43 @@
 - name: AWS
   aliases: [amazon web services]
   category: devops
+- name: Azure
+  aliases: [Microsoft Azure]
+  category: devops
+- name: GCP
+  aliases: [Google Cloud, Google Cloud Platform]
+  category: devops
+- name: Terraform
+  category: devops
 - name: CI/CD
-  aliases: [GitHub Actions, continuous integration]
+  aliases: [GitHub Actions, continuous integration, Jenkins, GitLab CI]
   category: devops
 - name: Linux
+  category: devops
+- name: Ansible
+  category: devops
+- name: Prometheus
+  category: devops
+- name: Grafana
   category: devops
 
 # tools
 - name: Git
   aliases: [GitHub, GitLab]
+  category: tools
+- name: Jira
+  category: tools
+- name: Agile
+  aliases: [Scrum, Kanban]
+  category: tools
+- name: Excel
+  aliases: [Microsoft Excel]
+  category: tools
+- name: SAP
+  category: tools
+- name: Salesforce
+  category: tools
+- name: HubSpot
+  category: tools
+- name: Figma
   category: tools

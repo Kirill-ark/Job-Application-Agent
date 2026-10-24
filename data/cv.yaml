@@ -10,6 +10,7 @@ name: Alex Example
 headline: Computer Science student focused on machine learning and backend
 location: Berlin
 availability: Werkstudent, up to 20 hours per week
+looking_for: [student, intern]
 
 education:
   - degree: B.Sc. Computer Science

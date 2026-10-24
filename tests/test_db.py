@@ -80,8 +80,9 @@ def test_unknown_vacancy_is_none(conn: sqlite3.Connection) -> None:
 def test_score_needs_existing_vacancy(conn: sqlite3.Connection) -> None:
     with pytest.raises(sqlite3.IntegrityError):
         conn.execute(
-            "INSERT INTO scores (vacancy_id, cv_hash, score, matched, gaps, reasons, created_at)"
-            " VALUES ('nope', 'h', 50, '[]', '[]', '', ?)",
+            "INSERT INTO scores (vacancy_id, cv_hash, score, components, matched, gaps, reasons,"
+            " created_at)"
+            " VALUES ('nope', 'h', 50, '{}', '[]', '[]', '', ?)",
             (NOW,),
         )
 
@@ -90,8 +91,9 @@ def test_score_must_be_between_0_and_100(conn: sqlite3.Connection) -> None:
     upsert_vacancies(conn, [make_vacancy()])
     with pytest.raises(sqlite3.IntegrityError):
         conn.execute(
-            "INSERT INTO scores (vacancy_id, cv_hash, score, matched, gaps, reasons, created_at)"
-            " VALUES ('ml-werkstudent-acme-123', 'h', 150, '[]', '[]', '', ?)",
+            "INSERT INTO scores (vacancy_id, cv_hash, score, components, matched, gaps, reasons,"
+            " created_at)"
+            " VALUES ('ml-werkstudent-acme-123', 'h', 150, '{}', '[]', '[]', '', ?)",
             (NOW,),
         )
 
