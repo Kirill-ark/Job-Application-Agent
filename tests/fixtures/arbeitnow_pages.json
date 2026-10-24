@@ -1,0 +1,96 @@
+[
+  {
+    "data": [
+      {
+        "slug": "werkstudent-machine-learning-acme-1",
+        "company_name": "Acme GmbH",
+        "title": "Werkstudent Machine Learning (m/w/d)",
+        "description": "<p>Du arbeitest mit <strong>Python</strong> und PyTorch.</p><ul><li>Python</li><li>SQL</li></ul>",
+        "remote": false,
+        "url": "https://www.arbeitnow.com/jobs/acme/werkstudent-machine-learning-acme-1",
+        "tags": ["Data", "IT"],
+        "job_types": ["Student college"],
+        "location": "Berlin",
+        "created_at": 1792800000
+      },
+      {
+        "slug": "senior-machine-learning-engineer-beta-2",
+        "company_name": "Beta AG",
+        "title": "Senior Machine Learning Engineer",
+        "description": "<p>Lead our machine learning platform.</p>",
+        "remote": false,
+        "url": "https://www.arbeitnow.com/jobs/beta/senior-machine-learning-engineer-beta-2",
+        "tags": ["Engineering"],
+        "job_types": ["Experienced"],
+        "location": "Munich",
+        "created_at": 1792790000
+      },
+      {
+        "slug": "werkstudent-marketing-gamma-3",
+        "company_name": "Gamma GmbH",
+        "title": "Werkstudent Marketing (m/w/d)",
+        "description": "<p>Social media and email campaigns.</p>",
+        "remote": false,
+        "url": "https://www.arbeitnow.com/jobs/gamma/werkstudent-marketing-gamma-3",
+        "tags": ["Marketing"],
+        "job_types": ["hilfstätigkeit / student"],
+        "location": "Berlin",
+        "created_at": 1792780000
+      },
+      {
+        "slug": "ai-research-intern-delta-4",
+        "company_name": "Delta Labs",
+        "title": "AI Research Intern",
+        "description": "<p>Work on LLM evaluation.</p>",
+        "remote": true,
+        "url": "https://www.arbeitnow.com/jobs/delta/ai-research-intern-delta-4",
+        "tags": ["Remote"],
+        "job_types": ["internship"],
+        "location": "",
+        "created_at": 1792770000
+      },
+      {
+        "slug": "ki-berater-epsilon-5",
+        "company_name": "Epsilon Consulting",
+        "title": "KI-Berater (m/w/d)",
+        "description": "<p>Beratung zu Copilot.</p>",
+        "remote": false,
+        "url": "https://www.arbeitnow.com/jobs/epsilon/ki-berater-epsilon-5",
+        "tags": ["Business Consulting"],
+        "job_types": ["Unbefristeter arbeitsvertrag", "berufserfahren"],
+        "location": "Berlin",
+        "created_at": 1792760000
+      },
+      {
+        "slug": "junior-data-analyst-zeta-6",
+        "company_name": "Zeta GmbH",
+        "title": "Junior Data Analyst",
+        "description": "<p>Dashboards, SQL and some machine learning.</p>",
+        "remote": false,
+        "url": "https://www.arbeitnow.com/jobs/zeta/junior-data-analyst-zeta-6",
+        "tags": ["Data"],
+        "job_types": ["Full Time"],
+        "location": "Hamburg",
+        "created_at": 1792750000
+      }
+    ],
+    "links": {"next": "https://www.arbeitnow.com/api/job-board-api?page=2"}
+  },
+  {
+    "data": [
+      {
+        "slug": "backend-engineer-eta-7",
+        "company_name": "Eta GmbH",
+        "title": "Backend Engineer",
+        "description": "<p>We use Python and sometimes machine learning.</p>",
+        "remote": false,
+        "url": "https://www.arbeitnow.com/jobs/eta/backend-engineer-eta-7",
+        "tags": ["Engineering"],
+        "job_types": ["Full Time"],
+        "location": "Berlin",
+        "created_at": 1792740000
+      }
+    ],
+    "links": {"next": null}
+  }
+]

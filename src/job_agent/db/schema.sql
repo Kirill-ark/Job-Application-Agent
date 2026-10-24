@@ -13,8 +13,10 @@ CREATE TABLE IF NOT EXISTS vacancies (
     description TEXT NOT NULL,
     tags        TEXT NOT NULL DEFAULT '[]',     -- JSON list
     job_types   TEXT NOT NULL DEFAULT '[]',     -- JSON list
+    level       TEXT NOT NULL
+                CHECK (level IN ('student', 'intern', 'entry', 'experienced', 'unknown')),
     posted_at   TEXT NOT NULL,
-    fetched_at  TEXT NOT NULL
+    fetched_at  TEXT NOT NULL                   -- the same for every row of one refresh
 );
 
 -- Result of score_match for one vacancy and one CV.
