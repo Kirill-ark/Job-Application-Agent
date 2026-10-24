@@ -10,7 +10,6 @@ stdout carries the MCP protocol, so logs go to stderr only.
 
 import logging
 import os
-from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -26,7 +25,9 @@ logger = logging.getLogger("job_agent.mcp_server")
 def main() -> None:
     logging.basicConfig(level=logging.INFO)  # basicConfig writes to stderr
     load_dotenv(REPO_ROOT / ".env")
-    cv_path = Path(os.environ["CV_PATH"]) if os.environ.get("CV_PATH") else DEFAULT_CV_PATH
+    # Relative paths are relative to the repo, like DATABASE_PATH: MCP clients
+    # such as Claude Desktop start the server from another folder.
+    cv_path = REPO_ROOT / os.environ["CV_PATH"] if os.environ.get("CV_PATH") else DEFAULT_CV_PATH
     try:
         reasons_llm = make_complete()
         letter_llm = make_complete(max_tokens=2500, json_schema=LETTER_SCHEMA)
