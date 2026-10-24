@@ -201,13 +201,17 @@ def approval_requests(
 
 
 def create_run(
-    conn: sqlite3.Connection, goal: str, started_at: str, ip_hash: str | None = None
+    conn: sqlite3.Connection,
+    goal: str,
+    started_at: str,
+    ip_hash: str | None = None,
+    token_hash: str | None = None,
 ) -> int:
     """Start an agent run and return its id."""
     with conn:
         cursor = conn.execute(
-            "INSERT INTO runs (goal, ip_hash, started_at) VALUES (?, ?, ?)",
-            (goal, ip_hash, started_at),
+            "INSERT INTO runs (goal, ip_hash, token_hash, started_at) VALUES (?, ?, ?, ?)",
+            (goal, ip_hash, token_hash, started_at),
         )
     return cursor.lastrowid
 

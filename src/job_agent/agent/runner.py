@@ -34,8 +34,8 @@ async def run_with_server(
     db_path: Path,
     conn: sqlite3.Connection,
     chat: Chat,
-    ip_hash: str | None = None,
+    run_id: int | None = None,
     on_step: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     async with Client(server_parameters(cv_path, db_path)) as client:
-        return await run_agent(goal, client, chat, conn, ip_hash, on_step)
+        return await run_agent(goal, client, chat, conn, run_id, on_step)

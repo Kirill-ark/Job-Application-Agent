@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Application Agent</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Job Application Agent</h1>
+    <p class="lead">
+      An AI agent searches current vacancies in Germany, scores them against a CV and drafts
+      cover letters that only use facts from the CV. Nothing is sent: every letter waits for
+      your approval.
+    </p>
+  </header>
+
+  <main>
+    <section class="card" id="start">
+      <form id="run-form">
+        <label for="goal">What should the agent do?</label>
+        <textarea id="goal" rows="2" maxlength="500" required>Find machine learning working student or internship jobs in Berlin for me and prepare cover letters for the best ones.</textarea>
+        <div class="form-row">
+          <span class="muted">CV: fictional example (Alex Example, CS student in Berlin)</span>
+          <button type="submit" id="run-button">Run the agent</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="columns" id="output" hidden>
+      <section class="card" id="trace-card">
+        <div class="card-head">
+          <h2>What the agent does</h2>
+          <span id="run-status" class="badge"></span>
+        </div>
+        <ol id="trace"></ol>
+        <p id="run-stats" class="muted"></p>
+      </section>
+
+      <section id="results">
+        <section class="card">
+          <h2>Vacancies</h2>
+          <p id="no-scores" class="muted">Scores appear here as the agent works.</p>
+          <table id="scores" hidden>
+            <thead><tr><th>Vacancy</th><th>Score</th><th>Gaps</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <section class="card">
+          <h2>Cover letters</h2>
+          <p id="no-drafts" class="muted">Drafts appear here. Each one waits for your approval.</p>
+          <div id="drafts"></div>
+        </section>
+
+        <section class="card" id="answer-card" hidden>
+          <h2>The agent's summary</h2>
+          <p id="answer" class="answer"></p>
+        </section>
+      </section>
+    </div>
+
+    <section class="card" id="letter" hidden>
+      <div class="card-head">
+        <h2 id="letter-title"></h2>
+        <button type="button" class="link" id="letter-close">Close</button>
+      </div>
+      <p class="muted" id="letter-meta"></p>
+      <p class="hint">Hover a sentence to see the CV fact it is based on. Underlined in red: a sentence the checks could not back up.</p>
+      <div id="letter-text" class="letter-text"></div>
+      <label for="letter-edit" class="edit-label">Your final version (you can edit it)</label>
+      <textarea id="letter-edit" rows="12"></textarea>
+      <div class="form-row">
+        <span id="letter-status" class="badge"></span>
+        <div class="buttons">
+          <button type="button" class="secondary" id="reject">Reject</button>
+          <button type="button" id="approve">Approve</button>
+          <button type="button" id="export" hidden>Export text</button>
+        </div>
+      </div>
+      <p id="letter-error" class="error" hidden></p>
+    </section>
+  </main>
+
+  <div id="tooltip" role="tooltip" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

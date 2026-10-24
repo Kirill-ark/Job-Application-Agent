@@ -171,14 +171,17 @@ async def run_agent(
     client: Client,
     chat: Chat,
     conn: sqlite3.Connection,
-    ip_hash: str | None = None,
+    run_id: int | None = None,
     on_step: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Run the agent for one goal with the tools of a connected MCP client.
 
+    `run_id` is a run the caller already created (the web API does, to answer
+    the browser at once); without it a new run is created.
+
     Returns the run summary (see `run_summary`).
     """
-    run = Run(conn, create_run(conn, goal, _now(), ip_hash), on_step)
+    run = Run(conn, run_id or create_run(conn, goal, _now()), on_step)
     tools = (await client.list_tools()).tools
     names = {tool.name for tool in tools}
     llm_tools = mcp_tools_for_llm(tools)
@@ -249,6 +252,8 @@ def run_summary(conn: sqlite3.Connection, run_id: int) -> dict[str, Any]:
             {
                 "draft_id": draft["id"],
                 "job_id": draft["vacancy_id"],
+                "title": step["result"]["title"],
+                "company": step["result"]["company"],
                 "status": draft["status"],
                 "grounded": not draft["issues"],
                 "approval": requests[-1]["status"] if requests else None,

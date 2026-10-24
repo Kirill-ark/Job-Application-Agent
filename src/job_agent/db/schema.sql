@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS runs (
     status      TEXT NOT NULL DEFAULT 'running'
                 CHECK (status IN ('running', 'done', 'failed', 'limited')),
     ip_hash     TEXT,                           -- hash, never the raw IP
+    token_hash  TEXT,                           -- hash of the browser's secret for this run
     trace       TEXT NOT NULL DEFAULT '[]',     -- JSON: list of steps
     answer      TEXT,                           -- the agent's final message
     error       TEXT,                           -- why the run failed

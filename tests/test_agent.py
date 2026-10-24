@@ -104,7 +104,15 @@ async def test_full_run(server: MCPServer, conn: sqlite3.Connection) -> None:
     assert summary["answer"] == "One letter is waiting for your approval."
     assert [s["job_id"] for s in summary["scores"]] == [JOB, OTHER_JOB]  # best first
     assert summary["drafts"] == [
-        {"draft_id": 1, "job_id": JOB, "status": "draft", "grounded": True, "approval": "pending"}
+        {
+            "draft_id": 1,
+            "job_id": JOB,
+            "title": "Werkstudent Machine Learning (m/w/d)",
+            "company": "Acme GmbH",
+            "status": "draft",
+            "grounded": True,
+            "approval": "pending",
+        }
     ]
     assert summary["llm_calls"] == 4
     assert summary["tokens"] == 4 * 110
