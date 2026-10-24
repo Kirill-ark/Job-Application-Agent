@@ -43,8 +43,13 @@ LEVEL_PATTERNS = [
     ("experienced", r"senior|\blead\b|principal|head of|experienced|berufserfahren|\bmid\b"),
 ]
 
+LEVELS = ("student", "intern", "entry", "experienced", "unknown")
+
 # How much a match counts, by where it was found.
 WEIGHT_TITLE, WEIGHT_TAGS, WEIGHT_DESCRIPTION = 3, 2, 1
+# Added when the vacancy has the wanted level. Only for vacancies that match the
+# query, so a level alone never brings in an unrelated job.
+LEVEL_BONUS = 2
 
 
 class JobSourceError(Exception):
@@ -184,14 +189,19 @@ def search_jobs(
     query: str,
     location: str | None = None,
     limit: int = 10,
+    level: str | None = None,
     client: httpx.Client | None = None,
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     """Find cached vacancies matching the query, best first.
 
+    The query says what the job is about ("machine learning"); the wanted
+    seniority goes into `level` ("student"), which ranks those vacancies higher.
     Remote vacancies count as being in any location. The result is short on
     purpose: the full description stays in the database for score_match.
     """
+    if level is not None and level not in LEVELS:
+        raise ValueError(f"level must be one of {', '.join(LEVELS)}, not {level!r}")
     now = now or datetime.now(UTC)
     if client is None:
         with httpx.Client() as own_client:
@@ -204,6 +214,8 @@ def search_jobs(
     for vacancy in current_vacancies(conn):
         score = relevance(vacancy, terms)
         if score > 0 and _in_location(vacancy, location):
+            if level and vacancy["level"] == level:
+                score += LEVEL_BONUS
             found.append((score, vacancy))
     found.sort(key=lambda pair: (pair[0], pair[1]["posted_at"]), reverse=True)
 

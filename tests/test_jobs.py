@@ -224,3 +224,33 @@ def test_api_down_with_old_cache_uses_the_cache(conn: sqlite3.Connection) -> Non
     api.failing = True
     results = search_jobs(conn, "python", client=api.client(), now=NOW + timedelta(hours=2))
     assert "werkstudent-machine-learning-acme-1" in ids(results)
+
+
+# Level bonus
+
+
+def test_level_bonus_changes_the_order(conn: sqlite3.Connection) -> None:
+    client = FakeArbeitnow().client()
+    without = search_jobs(conn, "machine learning", client=client, now=NOW)
+    assert ids(without)[0] == "werkstudent-machine-learning-acme-1"  # newer, same relevance
+    with_level = search_jobs(conn, "machine learning", level="experienced", client=client, now=NOW)
+    assert ids(with_level)[0] == "senior-machine-learning-engineer-beta-2"
+    assert with_level[0]["relevance"] == 5  # title match 3 + level bonus 2
+
+
+def test_level_alone_does_not_bring_in_unrelated_jobs(conn: sqlite3.Connection) -> None:
+    results = search_jobs(
+        conn,
+        "machine learning",
+        "Berlin",
+        level="student",
+        client=FakeArbeitnow().client(),
+        now=NOW,
+    )
+    assert ids(results)[0] == "werkstudent-machine-learning-acme-1"
+    assert "werkstudent-marketing-gamma-3" not in ids(results)  # student, but not about ML
+
+
+def test_unknown_level_is_an_error(conn: sqlite3.Connection) -> None:
+    with pytest.raises(ValueError, match="level must be one of"):
+        search_jobs(conn, "python", level="senior", client=FakeArbeitnow().client(), now=NOW)
