@@ -248,3 +248,33 @@ def get_run(conn: sqlite3.Connection, run_id: int) -> dict[str, Any] | None:
     run["trace"] = json.loads(run["trace"])
     run["is_demo"] = bool(run["is_demo"])
     return run
+
+
+def count_runs_since(conn: sqlite3.Connection, since: str, ip_hash: str | None = None) -> int:
+    """Runs started after `since`, from one IP or from everyone. The demo run does not count."""
+    if ip_hash is None:
+        query, args = "SELECT COUNT(*) FROM runs WHERE started_at > ? AND is_demo = 0", (since,)
+    else:
+        query = "SELECT COUNT(*) FROM runs WHERE started_at > ? AND is_demo = 0 AND ip_hash = ?"
+        args = (since, ip_hash)
+    return conn.execute(query, args).fetchone()[0]
+
+
+def running_since(conn: sqlite3.Connection, since: str) -> int | None:
+    """Id of a run that started after `since` and is still going, or None."""
+    row = conn.execute(
+        "SELECT id FROM runs WHERE status = 'running' AND started_at > ? LIMIT 1", (since,)
+    ).fetchone()
+    return row[0] if row else None
+
+
+def set_demo_run(conn: sqlite3.Connection, run_id: int) -> None:
+    """Make this run the one saved demo run."""
+    with conn:
+        conn.execute("UPDATE runs SET is_demo = 0 WHERE is_demo = 1")
+        conn.execute("UPDATE runs SET is_demo = 1 WHERE id = ?", (run_id,))
+
+
+def demo_run_id(conn: sqlite3.Connection) -> int | None:
+    row = conn.execute("SELECT id FROM runs WHERE is_demo = 1").fetchone()
+    return row[0] if row else None

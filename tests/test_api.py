@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from job_agent.api.app import FAILED_RUN, create_app
+from job_agent.api.limits import Limits
 from job_agent.approvals import request_approval
 from job_agent.db import connect
 from job_agent.db.queries import (
@@ -89,6 +90,9 @@ async def crashing_agent(goal: str, run_id: int, conn: sqlite3.Connection) -> No
     raise RuntimeError("the tool server did not start")
 
 
+ROOMY = Limits(runs_per_ip_per_day=100, runs_per_day=100, salt="test-salt")
+
+
 @pytest.fixture
 def db_path(tmp_path: Path) -> Path:
     return tmp_path / "test.db"
@@ -96,7 +100,7 @@ def db_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def client(db_path: Path) -> Iterator[TestClient]:
-    with TestClient(create_app(db_path, agent_runner=fake_agent)) as client:
+    with TestClient(create_app(db_path, agent_runner=fake_agent, limits=ROOMY)) as client:
         yield client
 
 
@@ -164,7 +168,7 @@ def test_other_runs_drafts_are_hidden(client: TestClient) -> None:
 
 
 def test_crashed_agent_fails_the_run(db_path: Path) -> None:
-    with TestClient(create_app(db_path, agent_runner=crashing_agent)) as client:
+    with TestClient(create_app(db_path, agent_runner=crashing_agent, limits=ROOMY)) as client:
         run_id, auth = start(client)
         run = wait_until_finished(client, run_id, auth)
     assert run["status"] == "failed"

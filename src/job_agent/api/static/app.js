@@ -9,6 +9,7 @@ const CITATION = /\s*\[((?:p|e|ed|lang)\d+(?:\.f\d+)?|sk|av)((?:,\s*(?:(?:p|e|ed
 
 let current = null; // {runId, token}
 let openDraft = null; // the draft shown in the letter view
+let demo = null; // the saved demo run while it is being shown
 
 const $ = (id) => document.getElementById(id);
 
@@ -30,7 +31,14 @@ async function api(path, options = {}) {
   if (current) headers["X-Run-Token"] = current.token;
   const response = await fetch(path, { ...options, headers });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.detail || `Request failed (${response.status})`);
+  if (!response.ok) {
+    const detail = body.detail || `Request failed (${response.status})`;
+    // A string, our {reason, message}, or FastAPI's list of input errors.
+    const message = typeof detail === "string" ? detail : detail.message || "Please check your input.";
+    const error = new Error(message);
+    error.reason = detail.reason; // busy, ip_limit, daily_limit
+    throw error;
+  }
   return body;
 }
 
@@ -47,14 +55,23 @@ $("run-form").addEventListener("submit", async (event) => {
     });
     current = { runId: run.run_id, token: run.token };
     try { localStorage.setItem("lastRun", JSON.stringify(current)); } catch {}
+    leaveDemo();
     closeLetter();
     $("output").hidden = false;
     poll();
   } catch (error) {
-    alert(error.message);
+    // A limit, or anything else: say why and offer the saved run.
+    showNotice(error.message);
     $("run-button").disabled = false;
   }
 });
+
+function showNotice(text) {
+  $("notice-text").textContent = text;
+  $("notice").hidden = false;
+}
+
+$("watch-demo").addEventListener("click", watchDemo);
 
 async function poll() {
   if (!current) return;
@@ -73,6 +90,59 @@ async function poll() {
   showRun(run);
   if (run.status === "running") setTimeout(poll, POLL_MS);
   else $("run-button").disabled = false;
+  if (run.status === "failed" && !run.drafts.length) {
+    showNotice(`The agent could not finish: ${run.error}`);
+  }
+}
+
+// The saved demo run, replayed step by step
+
+async function watchDemo() {
+  let saved;
+  try {
+    saved = await api("/api/demo");
+  } catch {
+    $("notice-text").textContent += " No saved run is available yet.";
+    return;
+  }
+  current = null;
+  demo = saved;
+  $("notice").hidden = true;
+  closeLetter();
+  const date = new Date(saved.started_at).toLocaleString();
+  $("demo-text").textContent =
+    `This is a replay of a real run from ${date} with the example CV. Letters are read-only here.`;
+  $("demo-banner").hidden = false;
+  $("output").hidden = false;
+  for (let shown = 1; shown <= saved.trace.length; shown++) {
+    if (demo !== saved) return; // a new run started meanwhile
+    showRun(replayState(saved, shown));
+    await new Promise((resolve) => setTimeout(resolve, 450));
+  }
+}
+
+// The demo run as it looked after `shown` steps.
+function replayState(run, shown) {
+  const trace = run.trace.slice(0, shown);
+  const done = shown === run.trace.length;
+  const scored = new Set(trace.filter((s) => s.tool === "score_match" && s.ok).map((s) => s.result.job_id));
+  const drafted = new Set(trace.filter((s) => s.tool === "draft_cover_letter" && s.ok).map((s) => s.result.draft_id));
+  return {
+    ...run,
+    trace,
+    status: done ? run.status : "running",
+    answer: done ? run.answer : null,
+    scores: run.scores.filter((s) => scored.has(s.job_id)),
+    drafts: run.drafts.filter((d) => drafted.has(d.draft_id)),
+    llm_calls: trace.filter((s) => s.kind === "llm").length,
+    tokens: trace.filter((s) => s.kind === "llm").reduce((n, s) => n + s.prompt_tokens + s.completion_tokens, 0),
+  };
+}
+
+function leaveDemo() {
+  demo = null;
+  $("demo-banner").hidden = true;
+  $("notice").hidden = true;
 }
 
 function showRun(run) {
@@ -206,7 +276,7 @@ function showDrafts(drafts) {
 // The letter view
 
 async function openLetter(draftId) {
-  const draft = await api(`/api/runs/${current.runId}/drafts/${draftId}`);
+  const draft = demo ? demo.letters[draftId] : await api(`/api/runs/${current.runId}/drafts/${draftId}`);
   openDraft = draft;
   showLetter(draft);
   $("letter").hidden = false;
@@ -224,16 +294,21 @@ function showLetter(draft) {
   $("letter-meta").textContent = draft.vacancy.location || "";
   $("letter-text").replaceChildren(...renderLetter(draft));
   $("letter-edit").value = draft.edited_text || draft.plain_text;
-  $("letter-edit").disabled = draft.status !== "draft";
+  $("letter-edit").disabled = demo !== null || draft.status !== "draft";
 
   const status = $("letter-status");
   const labels = { draft: "waiting for your approval", approved: "approved", rejected: "rejected" };
   status.textContent = labels[draft.status];
   status.className = `badge ${draft.status}`;
 
-  $("approve").hidden = draft.status !== "draft";
-  $("reject").hidden = draft.status !== "draft";
-  $("export").hidden = draft.status !== "approved";
+  const canAct = demo === null; // the demo is read-only
+  $("approve").hidden = !canAct || draft.status !== "draft";
+  $("reject").hidden = !canAct || draft.status !== "draft";
+  $("export").hidden = !canAct || draft.status !== "approved";
+  if (demo) {
+    status.textContent = "saved run, read-only";
+    status.className = "badge";
+  }
   $("letter-error").hidden = true;
 }
 

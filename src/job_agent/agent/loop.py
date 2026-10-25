@@ -230,6 +230,15 @@ async def run_agent(
     return run_summary(conn, run.run_id)
 
 
+def created_drafts(trace: list[dict[str, Any]]) -> list[int]:
+    """Ids of the drafts a run created, according to its trace."""
+    return [
+        step["result"]["draft_id"]
+        for step in trace
+        if step["kind"] == "tool" and step["tool"] == "draft_cover_letter" and step["ok"]
+    ]
+
+
 def run_summary(conn: sqlite3.Connection, run_id: int) -> dict[str, Any]:
     """What the run produced, taken from the trace and the database.
 
