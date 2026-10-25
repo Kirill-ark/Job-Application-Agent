@@ -56,7 +56,7 @@ $("run-form").addEventListener("submit", async (event) => {
     });
     current = { runId: run.run_id, token: run.token };
     lastRun = current;
-    $("last-run").hidden = true; // it is on screen already
+    showLastRunLink(true); // the new run is on screen: the link can hide it
     try { localStorage.setItem("lastRun", JSON.stringify(current)); } catch {}
     leaveDemo();
     closeLetter();
@@ -112,6 +112,7 @@ async function watchDemo() {
   }
   current = null;
   demo = saved;
+  showLastRunLink(false); // the demo replaces the last run on screen
   $("notice").hidden = true;
   closeLetter();
   const date = new Date(saved.started_at).toLocaleString();
@@ -412,15 +413,32 @@ async function withButtons(action) {
   }
 }
 
-// The page opens empty. If this browser started a run before, offer to show it.
+// The page opens empty. If this browser started a run before, a link shows it,
+// and the same link hides it again.
 try {
   lastRun = JSON.parse(localStorage.getItem("lastRun") || "null");
 } catch {}
 $("last-run").hidden = !lastRun;
+
+function showLastRunLink(runIsShown) {
+  $("last-run").hidden = !lastRun;
+  $("last-run").textContent = runIsShown ? "Hide my last run" : "Show my last run";
+}
+
 $("last-run").addEventListener("click", () => {
-  leaveDemo();
-  current = lastRun;
-  $("output").hidden = false;
-  $("run-button").disabled = true;
-  poll();
+  const runIsShown = current !== null && !$("output").hidden;
+  if (runIsShown) {
+    current = null; // also stops the polling
+    closeLetter();
+    $("output").hidden = true;
+    $("run-button").disabled = false;
+    showLastRunLink(false);
+  } else {
+    leaveDemo();
+    current = lastRun;
+    $("output").hidden = false;
+    $("run-button").disabled = true;
+    showLastRunLink(true);
+    poll();
+  }
 });
