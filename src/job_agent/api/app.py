@@ -5,6 +5,7 @@
     GET  /api/runs/{run_id}/drafts/{draft_id}      one letter with its cited facts and issues
     POST /api/runs/{run_id}/drafts/{draft_id}/decision   the human approves or rejects
     POST /api/runs/{run_id}/drafts/{draft_id}/export     the human takes the final text
+    POST /api/runs/{run_id}/cancel                 the human stops a run that is going
     GET  /api/demo                                 the saved demo run, shown when a limit is hit
     POST /api/cv/parse                             a pasted CV as the agent will see it
 
@@ -64,6 +65,7 @@ from job_agent.db.queries import (
     get_draft,
     get_run,
     get_vacancy,
+    save_trace,
 )
 from job_agent.letters import strip_citations
 from job_agent.llm import DEFAULT_LETTER_MODEL, Complete, LLMError, make_chat, make_complete
@@ -74,6 +76,7 @@ logger = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
 FAILED_RUN = "The agent could not run. Please try again later."
+STOPPED = "Stopped by the user"
 
 # A visitor may have the LLM read a CV this many times a day (kept in memory only).
 PARSES_PER_IP_PER_DAY = 10
@@ -142,7 +145,7 @@ def create_app(
     taxonomy = load_taxonomy()
     parses: dict[str, list[datetime]] = {}  # ip_hash -> times, for PARSES_PER_IP_PER_DAY
     app = FastAPI(title="Job Application Agent")
-    app.state.tasks = set()  # keeps background runs alive until they finish
+    app.state.tasks = {}  # run_id -> background task: keeps it alive, and lets it be stopped
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
     def database() -> Iterator[sqlite3.Connection]:
@@ -243,8 +246,8 @@ def create_app(
             conn, goal, now.isoformat(), ip_hash, hash_token(token), own_cv=cv is not None
         )
         task = asyncio.create_task(run_in_background(goal, run_id, cv))
-        app.state.tasks.add(task)
-        task.add_done_callback(app.state.tasks.discard)
+        app.state.tasks[run_id] = task
+        task.add_done_callback(lambda _: app.state.tasks.pop(run_id, None))
         return {"run_id": run_id, "token": token}
 
     @app.post("/api/cv/parse")
@@ -290,6 +293,23 @@ def create_app(
     @app.get("/api/runs/{run_id}")
     def show_run(run_id: int, conn: Db, token: Token) -> dict[str, Any]:
         return run_view(conn, owned_run(conn, run_id, token))
+
+    @app.post("/api/runs/{run_id}/cancel")
+    async def cancel_run(run_id: int, conn: Db, token: Token) -> dict[str, Any]:
+        """Stop a run. What it already made (scores, drafts) is kept.
+
+        The run is finished and the stop is added to its trace before the task
+        is cancelled. There is no await in between, so the agent cannot write
+        its trace again after this.
+        """
+        run = owned_run(conn, run_id, token)
+        if run["status"] == "running":
+            save_trace(conn, run_id, [*run["trace"], {"kind": "stopped", "duration_ms": 0}])
+            finish_run(conn, run_id, "failed", _now(), error=STOPPED)
+            task = app.state.tasks.get(run_id)
+            if task:
+                task.cancel()  # also closes the run's tool server
+        return run_view(conn, get_run(conn, run_id))
 
     @app.get("/api/demo")
     def show_demo(conn: Db) -> dict[str, Any]:

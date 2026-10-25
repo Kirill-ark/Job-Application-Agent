@@ -201,3 +201,18 @@ def test_interrupted_runs_are_failed_on_start(tmp_path: Path) -> None:
     run = get_run(conn, run_id)
     conn.close()
     assert (run["status"], run["error"]) == ("failed", "Interrupted by a server restart")
+
+
+def test_a_stopped_run_frees_the_agent(tmp_path: Path, clock: Clock) -> None:
+    release = asyncio.Event()
+
+    async def slow_agent(goal: str, run_id: int, conn: sqlite3.Connection, cv_path: Path) -> None:
+        await release.wait()
+
+    limits = Limits(runs_per_ip_per_day=100, runs_per_day=100, salt="s")
+    with make_client(tmp_path / "t.db", limits, clock, slow_agent) as client:
+        run_id, auth = start(client)
+        assert refused(client)["reason"] == "busy"
+        client.post(f"/api/runs/{run_id}/cancel", headers=auth)
+        start(client)  # no need to wait 10 minutes
+        client.portal.call(release.set)

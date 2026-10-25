@@ -97,6 +97,7 @@ button {
 button:disabled { opacity: 0.5; cursor: default; }
 button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
 button.link { background: none; color: var(--accent); padding: 4px; }
+button.small { padding: 4px 12px; font-size: 13px; }
 
 .columns { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 16px; align-items: start; }
 @media (max-width: 860px) { .columns { grid-template-columns: 1fr; } }

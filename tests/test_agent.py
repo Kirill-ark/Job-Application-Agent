@@ -178,11 +178,24 @@ async def test_unknown_tool_and_bad_arguments(server: MCPServer, conn: sqlite3.C
     assert errors[1] == "ERROR: The arguments are not a JSON object"
 
 
-async def test_too_many_errors_in_a_row(server: MCPServer, conn: sqlite3.Connection) -> None:
+async def test_too_many_failed_steps_in_a_row(server: MCPServer, conn: sqlite3.Connection) -> None:
     summary = await run(server, conn, ScriptedLLM(calls(("score_match", {"job_id": "x"}))))
     assert summary["status"] == "failed"
-    assert summary["error"] == "Stopped after 3 failed tool calls in a row"
+    assert summary["error"] == "Stopped after 3 steps in a row in which every tool call failed"
     assert summary["llm_calls"] == 3
+
+
+async def test_one_step_of_made_up_ids_can_be_corrected(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    # Seen live: the model skipped the search and invented 16 ids in one step.
+    made_up = calls(*[("score_match", {"job_id": f"a{i}"}) for i in range(16)])
+    llm = ScriptedLLM(
+        made_up, calls(SEARCH), calls(("score_match", {"job_id": JOB})), final("Done")
+    )
+    summary = await run(server, conn, llm)
+    assert summary["status"] == "done"
+    assert [s["job_id"] for s in summary["scores"]] == [JOB]
 
 
 async def test_llm_failure(server: MCPServer, conn: sqlite3.Connection) -> None:

@@ -81,7 +81,10 @@
       <section class="card" id="trace-card">
         <div class="card-head">
           <h2>What the agent does</h2>
-          <span id="run-time" class="muted"></span>
+          <div class="buttons">
+            <span id="run-time" class="muted"></span>
+            <button type="button" class="secondary small" id="stop-run" hidden>Stop</button>
+          </div>
         </div>
         <p class="now"><span id="now-icon"></span><span id="now-text"></span></p>
         <ol class="stages" id="stages"></ol>

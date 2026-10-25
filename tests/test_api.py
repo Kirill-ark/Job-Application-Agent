@@ -1,5 +1,6 @@
 """The web API, with a fake agent that fills in the run like the real one."""
 
+import asyncio
 import sqlite3
 import time
 from collections.abc import Iterator
@@ -10,7 +11,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from job_agent.api.app import FAILED_RUN, create_app
+from job_agent.api.app import FAILED_RUN, STOPPED, create_app
 from job_agent.api.limits import Limits
 from job_agent.approvals import request_approval
 from job_agent.db import connect
@@ -253,3 +254,58 @@ def test_edit_is_ignored_on_reject(
     )
     assert response.status_code == 200
     assert response.json()["edited_text"] is None
+
+
+# Stopping a run
+
+
+def test_stop_a_running_run(db_path: Path) -> None:
+    reached = {}
+
+    async def slow_agent(goal: str, run_id: int, conn: sqlite3.Connection, cv_path: Path) -> None:
+        # Make a draft, then wait as if the LLM were slow.
+        await fake_agent(goal, run_id, conn, cv_path)
+        conn.execute(
+            "UPDATE runs SET status = 'running', finished_at = NULL WHERE id = ?", (run_id,)
+        )
+        conn.commit()
+        try:
+            await asyncio.sleep(30)
+        except asyncio.CancelledError:
+            reached["cancelled"] = True
+            raise
+
+    with TestClient(create_app(db_path, agent_runner=slow_agent, limits=ROOMY)) as client:
+        run_id, auth = start(client)
+        for _ in range(100):  # until the draft is there
+            if client.get(f"/api/runs/{run_id}", headers=auth).json()["drafts"]:
+                break
+            time.sleep(0.02)
+        stopped = client.post(f"/api/runs/{run_id}/cancel", headers=auth).json()
+        for _ in range(100):
+            if reached:
+                break
+            time.sleep(0.02)
+        later = client.get(f"/api/runs/{run_id}", headers=auth).json()
+
+    assert stopped["status"] == "failed"
+    assert stopped["error"] == STOPPED
+    assert stopped["trace"][-1]["kind"] == "stopped"
+    assert reached == {"cancelled": True}  # the agent task really was cancelled
+    assert later["status"] == "failed" and later["error"] == STOPPED  # not overwritten
+    assert len(later["drafts"]) == 1  # what the run made is kept
+
+
+def test_stop_needs_the_token(client: TestClient) -> None:
+    run_id, _ = start(client)
+    assert (
+        client.post(f"/api/runs/{run_id}/cancel", headers={"X-Run-Token": "x"}).status_code == 404
+    )
+
+
+def test_stopping_a_finished_run_changes_nothing(client: TestClient) -> None:
+    run_id, auth = start(client)
+    wait_until_finished(client, run_id, auth)
+    stopped = client.post(f"/api/runs/{run_id}/cancel", headers=auth).json()
+    assert stopped["status"] == "done"
+    assert all(step["kind"] != "stopped" for step in stopped["trace"])

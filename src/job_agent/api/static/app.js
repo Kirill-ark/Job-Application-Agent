@@ -83,6 +83,17 @@ function showNotice(text) {
 
 $("watch-demo").addEventListener("click", watchDemo);
 
+$("stop-run").addEventListener("click", async () => {
+  $("stop-run").disabled = true;
+  try {
+    showRun(await api(`/api/runs/${current.runId}/cancel`, { method: "POST" }));
+  } catch (error) {
+    showNotice(error.message);
+  } finally {
+    $("stop-run").disabled = false;
+  }
+});
+
 async function poll() {
   if (!current) return;
   let run;
@@ -102,7 +113,9 @@ async function poll() {
   showRun(run);
   if (run.status === "running") setTimeout(poll, POLL_MS);
   else $("run-button").disabled = false;
-  if (run.status === "failed" && !run.drafts.length) {
+  // A run the user stopped needs no "could not finish" notice.
+  const stoppedByUser = run.trace.some((s) => s.kind === "stopped");
+  if (run.status === "failed" && !run.drafts.length && !stoppedByUser) {
     showNotice(`The agent could not finish: ${run.error}`);
   }
 }
@@ -182,7 +195,8 @@ function groupSteps(trace) {
   const groups = [];
   for (const step of trace) {
     if (step.kind === "llm") groups.push({ llm: step, calls: [] });
-    else if (groups.length) groups[groups.length - 1].calls.push(step);
+    else if (step.kind === "tool" && groups.length) groups[groups.length - 1].calls.push(step);
+    // a "stopped" step (the user pressed Stop) is shown at the end, see showTrace
   }
   for (const group of groups) group.done = group.calls.length >= group.llm.tool_calls.length;
   return groups;
@@ -242,11 +256,17 @@ function showTrace(run) {
   const groups = groupSteps(run.trace);
   const running = run.status === "running";
   const last = groups[groups.length - 1];
+  const stoppedByUser = run.trace.some((s) => s.kind === "stopped");
+  const waiting = `${plural(run.drafts.length, "letter")} waiting for your approval`;
+
+  // Stop is offered only while a real run is going (not for the demo replay).
+  $("stop-run").hidden = !running || demo !== null;
 
   // The live line
   let text;
-  if (run.status === "failed") text = `Stopped: ${run.error}`;
-  else if (!running) text = `Done · ${plural(run.drafts.length, "letter")} waiting for your approval`;
+  if (stoppedByUser) text = run.drafts.length ? `Stopped by you · ${waiting}` : "Stopped by you";
+  else if (run.status === "failed") text = `Stopped: ${run.error}`;
+  else if (!running) text = `Done · ${waiting}`;
   else if (!last) text = "Starting the agent…";
   else if (!last.llm.tool_calls.length) text = "Writing the summary…";
   else if (!last.done) text = groupTitle(last);
@@ -283,7 +303,8 @@ function showTrace(run) {
   list.replaceChildren(
     ...groups.map((group, i) => {
       const failed = group.calls.some((c) => !c.ok);
-      const state = !group.done && running ? "spin" : failed ? "failed" : "ok";
+      // A group cut off by a stop or an error did not finish: no green check.
+      const state = !group.done ? (running ? "spin" : "failed") : failed ? "failed" : "ok";
       const tokens = group.llm.prompt_tokens + group.llm.completion_tokens;
       const item = el("li", {},
         icon(state),
@@ -303,6 +324,16 @@ function showTrace(run) {
       return item;
     }),
   );
+  if (run.status === "failed") {
+    // How the run ended early: the user's Stop, or an error.
+    list.append(
+      el("li", {},
+        icon("failed"),
+        el("div", { class: "step-title", text: stoppedByUser ? "Stopped by you" : "Stopped" }),
+        stoppedByUser ? null : el("div", { class: "step-error", text: run.error }),
+      ),
+    );
+  }
   const stats = [];
   if (run.llm_calls) stats.push(`${plural(run.llm_calls, "LLM call")}, ${run.tokens.toLocaleString()} tokens`);
   $("run-stats").textContent = stats.join(" · ");

@@ -14,7 +14,8 @@ has answered to it, it is replaced by a short version (see SHORT_FIELDS).
 The full results stay in the trace.
 
 Limits are enforced here in code, not only asked for in the prompt:
-MAX_STEPS LLM calls, MAX_LETTERS letters, MAX_ERRORS_IN_A_ROW failed tool calls.
+MAX_STEPS LLM calls, MAX_LETTERS letters, MAX_FAILED_STEPS steps in a row in which
+every tool call failed.
 """
 
 import json
@@ -32,7 +33,9 @@ from job_agent.llm import Chat, ChatReply, LLMError, ToolCall
 
 MAX_STEPS = 10
 MAX_LETTERS = 3
-MAX_ERRORS_IN_A_ROW = 3
+# Counted per step, not per call: one step with 16 made-up ids is one mistake the
+# model can correct after reading the errors, not 16 (found in a live run).
+MAX_FAILED_STEPS = 3
 
 # What stays of a tool result in the conversation after the model has seen it.
 SHORT_FIELDS = {
@@ -50,6 +53,8 @@ several vacancies at once).
 Plan:
 1. read_cv, to know the candidate's location and the levels they look for.
 2. search_jobs once or twice (limit 8) with a short topic query, the city, and the level.
+   Always search before scoring: vacancy ids come only from search_jobs results.
+   Never make up an id.
 3. score_match for EVERY vacancy the searches returned (each id once), all in one
    step. Do not skip any by its title: titles often hide a good fit, and scoring
    is cheap.
@@ -126,7 +131,7 @@ class Run:
         self.on_step = on_step
         self.trace: list[dict[str, Any]] = []
         self.letters = 0
-        self.errors_in_a_row = 0
+        self.failed_steps = 0  # steps in a row in which every call failed
 
     def record(self, step: dict[str, Any]) -> None:
         self.trace.append(step)
@@ -161,10 +166,8 @@ async def call_tool(client: Client, run: Run, names: set[str], call: ToolCall) -
 
     step["duration_ms"] = round((time.monotonic() - started) * 1000)
     if error:
-        run.errors_in_a_row += 1
         run.record({**step, "ok": False, "error": error})
         return f"ERROR: {error}", f"ERROR: {error}"
-    run.errors_in_a_row = 0
     data = result.structured_content
     run.record({**step, "ok": True, "result": data})
     return to_json(data), shorten(call.name, data)
@@ -221,13 +224,18 @@ async def run_agent(
         if not reply.tool_calls:
             status, answer, error = "done", reply.content, None
             break
+        all_failed = True
         for call in reply.tool_calls:
             full, short = await call_tool(client, run, names, call)
+            all_failed = all_failed and full.startswith("ERROR: ")
             message = {"role": "tool", "tool_call_id": call.id, "content": full}
             messages.append(message)
             seen_once.append((message, short))
-        if run.errors_in_a_row >= MAX_ERRORS_IN_A_ROW:
-            error = f"Stopped after {MAX_ERRORS_IN_A_ROW} failed tool calls in a row"
+        run.failed_steps = run.failed_steps + 1 if all_failed else 0
+        if run.failed_steps >= MAX_FAILED_STEPS:
+            error = (
+                f"Stopped after {MAX_FAILED_STEPS} steps in a row in which every tool call failed"
+            )
             break
 
     finish_run(conn, run.run_id, status, _now(), answer, error)
