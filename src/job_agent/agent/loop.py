@@ -50,7 +50,9 @@ several vacancies at once).
 Plan:
 1. read_cv, to know the candidate's location and the levels they look for.
 2. search_jobs once or twice (limit 8) with a short topic query, the city, and the level.
-3. score_match for the most relevant results, all in one step.
+3. score_match for EVERY vacancy the searches returned (each id once), all in one
+   step. Do not skip any by its title: titles often hide a good fit, and scoring
+   is cheap.
 4. draft_cover_letter for the best matches (label good, else the best maybe),
    at most 3, all in one step. Never for "bad" matches. Each draft goes to the
    user's approval queue by itself.

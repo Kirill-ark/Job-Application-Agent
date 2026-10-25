@@ -159,33 +159,146 @@ function leaveDemo() {
 }
 
 function showRun(run) {
-  const status = $("run-status");
-  status.textContent = run.status;
-  status.className = `badge ${run.status}`;
-  showTrace(run.trace, run.status);
+  showTrace(run);
   showScores(run.scores);
   showDrafts(run.drafts);
-
-  const stats = [];
-  if (run.llm_calls) stats.push(`${run.llm_calls} LLM calls, ${run.tokens.toLocaleString()} tokens`);
-  if (run.error) stats.push(run.error);
-  $("run-stats").textContent = stats.join(" · ");
-
   $("answer-card").hidden = !run.answer;
   $("answer").textContent = run.answer || "";
 }
 
-const TOOL_LABELS = {
-  read_cv: "Read the CV",
-  search_jobs: "Searched vacancies",
-  score_match: "Scored a vacancy",
-  draft_cover_letter: "Wrote a cover letter",
-  request_approval: "Asked for approval",
-};
+// The trace panel: one live line saying what the agent does now, five stages,
+// and all steps (one per agent decision) behind "Show all steps".
+
+const STAGES = [
+  ["CV", ["read_cv"]],
+  ["Search", ["search_jobs"]],
+  ["Score", ["score_match"]],
+  ["Letters", ["draft_cover_letter", "request_approval"]],
+  ["Summary", []],
+];
+
+// One group per agent decision: the LLM step and the tool calls it asked for.
+function groupSteps(trace) {
+  const groups = [];
+  for (const step of trace) {
+    if (step.kind === "llm") groups.push({ llm: step, calls: [] });
+    else if (groups.length) groups[groups.length - 1].calls.push(step);
+  }
+  for (const group of groups) group.done = group.calls.length >= group.llm.tool_calls.length;
+  return groups;
+}
+
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+// "Scored 8 vacancies · best 86 good" when done, "Scoring 8 vacancies…" while running.
+function groupTitle(group) {
+  const names = group.llm.tool_calls;
+  if (!names.length) return "Wrote the summary";
+  const parts = [];
+  for (const tool of [...new Set(names)]) {
+    const asked = names.filter((n) => n === tool).length;
+    const calls = group.calls.filter((c) => c.tool === tool && c.ok);
+    const results = calls.map((c) => c.result);
+    if (tool === "read_cv") {
+      parts.push(group.done && results[0] ? `Read the CV · ${results[0].name}, ${results[0].location}` : "Reading the CV…");
+    } else if (tool === "search_jobs") {
+      const found = results.reduce((n, r) => n + r.count, 0);
+      parts.push(group.done ? `Searched ${plural(asked, "query", "queries")} · ${found} found` : `Searching vacancies…`);
+    } else if (tool === "score_match") {
+      const best = results.reduce((b, r) => (b && b.score >= r.score ? b : r), null);
+      parts.push(group.done
+        ? `Scored ${plural(results.length, "vacancy", "vacancies")}${best ? ` · best ${best.score} ${best.label}` : ""}`
+        : `Scoring ${plural(asked, "vacancy", "vacancies")}…`);
+    } else if (tool === "draft_cover_letter") {
+      const shaky = results.filter((r) => !r.grounded).length;
+      parts.push(group.done
+        ? `Wrote ${plural(results.length, "letter")} · ${shaky ? `${shaky} need${shaky === 1 ? "s" : ""} a look` : "all backed by the CV"}`
+        : `Writing ${plural(asked, "cover letter")}…`);
+    } else {
+      parts.push(group.done ? `Asked for approval` : `Asking for approval…`);
+    }
+  }
+  const errors = group.calls.filter((c) => !c.ok).length;
+  return parts.join(" + ") + (errors ? ` · ${plural(errors, "error")}` : "");
+}
+
+function icon(state) {
+  // state: "spin", "ok" or "failed"
+  return el("span", { class: `icon ${state}`, text: state === "ok" ? "✓" : state === "failed" ? "✕" : "" });
+}
+
+function showTrace(run) {
+  const groups = groupSteps(run.trace);
+  const running = run.status === "running";
+  const last = groups[groups.length - 1];
+
+  // The live line
+  let text;
+  if (run.status === "failed") text = `Stopped: ${run.error}`;
+  else if (!running) text = `Done · ${plural(run.drafts.length, "letter")} waiting for your approval`;
+  else if (!last) text = "Starting the agent…";
+  else if (!last.llm.tool_calls.length) text = "Writing the summary…";
+  else if (!last.done) text = groupTitle(last);
+  else text = "Deciding the next step…";
+  $("now-icon").replaceWith(Object.assign(icon(running ? "spin" : run.status === "done" ? "ok" : "failed"), { id: "now-icon" }));
+  $("now-text").textContent = text;
+  // A live run counts from its start, also while it waits for the LLM; the demo
+  // replay has no real clock, so it adds up the steps.
+  const ms = demo
+    ? run.trace.reduce((n, s) => n + (s.duration_ms || 0), 0)
+    : (run.finished_at ? Date.parse(run.finished_at) : Date.now()) - Date.parse(run.started_at);
+  $("run-time").textContent = ms > 0 ? `${Math.round(ms / 1000)} s` : "";
+
+  // The stages: done, active (the latest one reached while running) or not yet
+  const reached = STAGES.map(([, tools], i) =>
+    i === STAGES.length - 1
+      ? groups.some((g) => !g.llm.tool_calls.length)
+      : groups.some((g) => g.llm.tool_calls.some((t) => tools.includes(t))),
+  );
+  const latest = reached.lastIndexOf(true);
+  $("stages").replaceChildren(
+    ...STAGES.map(([label], i) => {
+      let state = "";
+      if (reached[i] && (i < latest || !running)) state = "done";
+      else if (i === latest && running) state = "active";
+      return el("li", { class: state, text: label });
+    }),
+  );
+
+  // All steps; keep open the ones the user opened, the list is rebuilt every second
+  const list = $("trace");
+  const open = new Set([...list.querySelectorAll("details")].map((d, i) => (d.open ? i : -1)));
+  list.replaceChildren(
+    ...groups.map((group, i) => {
+      const failed = group.calls.some((c) => !c.ok);
+      const state = !group.done && running ? "spin" : failed ? "failed" : "ok";
+      const tokens = group.llm.prompt_tokens + group.llm.completion_tokens;
+      const item = el("li", {},
+        icon(state),
+        el("div", { class: "step-title", text: groupTitle(group) }),
+        el("div", { class: "step-meta", text: `${(group.llm.duration_ms / 1000).toFixed(1)} s to decide · ${tokens.toLocaleString()} tokens` }),
+      );
+      for (const call of group.calls.filter((c) => !c.ok)) item.append(el("div", { class: "step-error", text: call.error }));
+      if (group.calls.length) {
+        const details = el("details", {},
+          el("summary", { text: "Details" }),
+          el("ul", { class: "calls" }, ...group.calls.map((c) => el("li", { text: toolSummary(c) || c.tool }))),
+          el("pre", { text: JSON.stringify(group.calls.map((c) => ({ tool: c.tool, arguments: c.arguments, result: c.result ?? c.error })), null, 2) }),
+        );
+        details.open = open.has(i);
+        item.append(details);
+      }
+      return item;
+    }),
+  );
+  const stats = [];
+  if (run.llm_calls) stats.push(`${plural(run.llm_calls, "LLM call")}, ${run.tokens.toLocaleString()} tokens`);
+  $("run-stats").textContent = stats.join(" · ");
+}
 
 function toolSummary(step) {
   const args = step.arguments || {};
-  if (!step.ok) return null;
+  if (!step.ok) return `${step.tool}: failed`;
   const result = step.result || {};
   switch (step.tool) {
     case "search_jobs":
@@ -201,50 +314,6 @@ function toolSummary(step) {
     default:
       return null;
   }
-}
-
-function showTrace(trace, status) {
-  const list = $("trace");
-  list.replaceChildren();
-  for (const step of trace) {
-    const seconds = (step.duration_ms / 1000).toFixed(1);
-    if (step.kind === "llm") {
-      const decided = step.tool_calls.length
-        ? `Decided to call ${countNames(step.tool_calls)}`
-        : "Wrote the final answer";
-      list.append(
-        el("li", { class: "llm" },
-          el("div", { class: "step-title", text: decided }),
-          el("div", { class: "step-meta", text: `${seconds} s · ${step.prompt_tokens + step.completion_tokens} tokens` }),
-        ),
-      );
-    } else {
-      const item = el("li", { class: step.ok ? "ok" : "failed" },
-        el("div", { class: "step-title", text: TOOL_LABELS[step.tool] || step.tool }),
-      );
-      const summary = toolSummary(step);
-      if (summary) item.append(el("div", { class: "step-meta", text: summary }));
-      if (!step.ok) item.append(el("div", { class: "step-error", text: step.error }));
-      item.append(
-        el("details", {},
-          el("summary", { text: "Details" }),
-          el("pre", { text: JSON.stringify({ arguments: step.arguments, result: step.result ?? step.error }, null, 2) }),
-        ),
-      );
-      list.append(item);
-    }
-  }
-  if (status === "running") {
-    list.append(el("li", { class: "waiting", text: trace.length ? "Working…" : "Starting the agent…" }));
-  }
-}
-
-function countNames(names) {
-  const counts = {};
-  for (const name of names) counts[name] = (counts[name] || 0) + 1;
-  return Object.entries(counts)
-    .map(([name, n]) => (n > 1 ? `${name} ×${n}` : name))
-    .join(", ");
 }
 
 function showScores(scores) {

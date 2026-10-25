@@ -98,23 +98,45 @@ button:disabled { opacity: 0.5; cursor: default; }
 button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
 button.link { background: none; color: var(--accent); padding: 4px; }
 
-.columns { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+.columns { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 16px; align-items: start; }
 @media (max-width: 860px) { .columns { grid-template-columns: 1fr; } }
 
-/* Trace */
-#trace { list-style: none; margin: 0; padding: 0; }
-#trace li { padding: 8px 0 8px 14px; border-left: 2px solid var(--border); position: relative; }
-#trace li::before {
-  content: ""; position: absolute; left: -5px; top: 14px;
-  width: 8px; height: 8px; border-radius: 50%; background: var(--border);
+/* Trace: one live line, five stages, and all steps on demand */
+.now { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-weight: 600; }
+.icon { width: 16px; height: 16px; flex-shrink: 0; display: inline-grid; place-items: center; font-size: 13px; }
+.icon.ok { color: var(--good); }
+.icon.failed { color: var(--bad); }
+.icon.spin {
+  border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
-#trace li.llm::before { background: var(--accent); }
-#trace li.ok::before { background: var(--good); }
-#trace li.failed::before { background: var(--bad); }
-#trace li.waiting { color: var(--muted); font-style: italic; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .icon.spin { animation: none; } }
+
+.stages { display: flex; list-style: none; margin: 0 0 12px; padding: 0; }
+.stages li { flex: 1; text-align: center; font-size: 12px; color: var(--muted); position: relative; padding-top: 16px; }
+.stages li::before { /* the dot */
+  content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 1;
+  width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border);
+}
+.stages li + li::after { /* the line to the previous dot */
+  content: ""; position: absolute; top: 5px; right: 50%; width: 100%; height: 2px; background: var(--border);
+}
+.stages li.done::before { background: var(--good); border-color: var(--good); }
+.stages li.done + li::after, .stages li.done + li.done::after { background: var(--good); }
+.stages li.active { color: var(--text); font-weight: 600; }
+.stages li.active::before { border-color: var(--accent); background: var(--accent); }
+
+#all-steps > summary { font-size: 14px; color: var(--accent); cursor: pointer; }
+#trace { list-style: none; margin: 10px 0 0; padding: 0; }
+#trace > li { display: grid; grid-template-columns: 16px 1fr; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+#trace > li:first-child { border-top: 0; }
+#trace > li > :not(.icon) { grid-column: 2; }
 .step-title { font-weight: 600; }
 .step-meta { color: var(--muted); font-size: 13px; }
 .step-error { color: var(--bad); font-size: 13px; }
+.calls { margin: 4px 0 0; padding-left: 16px; font-size: 13px; color: var(--muted); }
+.calls li { margin-bottom: 2px; }
 details { margin-top: 4px; font-size: 13px; }
 details summary { cursor: pointer; color: var(--muted); }
 pre {
@@ -129,9 +151,9 @@ pre {
   white-space: nowrap;
 }
 .badge:empty { display: none; }
-.badge.good, .badge.done, .badge.approved { background: var(--good-bg); color: var(--good); }
-.badge.maybe, .badge.running, .badge.pending, .badge.draft { background: var(--maybe-bg); color: var(--maybe); }
-.badge.bad, .badge.failed, .badge.rejected { background: var(--bad-bg); color: var(--bad); }
+.badge.good, .badge.approved { background: var(--good-bg); color: var(--good); }
+.badge.maybe, .badge.pending, .badge.draft { background: var(--maybe-bg); color: var(--maybe); }
+.badge.bad, .badge.rejected { background: var(--bad-bg); color: var(--bad); }
 
 /* Scores */
 table { width: 100%; border-collapse: collapse; }

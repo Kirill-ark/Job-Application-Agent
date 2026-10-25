@@ -279,7 +279,13 @@ def create_app(
         for score in summary["scores"]:
             vacancy = get_vacancy(conn, score["job_id"])
             score["url"] = vacancy["url"] if vacancy else None
-        return {**summary, "goal": run["goal"], "trace": run["trace"]}
+        return {
+            **summary,
+            "goal": run["goal"],
+            "trace": run["trace"],
+            "started_at": run["started_at"],
+            "finished_at": run["finished_at"],
+        }
 
     @app.get("/api/runs/{run_id}")
     def show_run(run_id: int, conn: Db, token: Token) -> dict[str, Any]:
@@ -293,7 +299,7 @@ def create_app(
             raise HTTPException(404, "No demo run saved")
         run = get_run(conn, run_id)
         letters = {d: draft_view(conn, get_draft(conn, d)) for d in created_drafts(run["trace"])}
-        return {**run_view(conn, run), "started_at": run["started_at"], "letters": letters}
+        return {**run_view(conn, run), "letters": letters}
 
     @app.get("/api/runs/{run_id}/drafts/{draft_id}")
     def show_draft(run_id: int, draft_id: int, conn: Db, token: Token) -> dict[str, Any]:

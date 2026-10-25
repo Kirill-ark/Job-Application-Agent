@@ -77,17 +77,22 @@
       <p id="demo-text"></p>
     </section>
 
-    <div class="columns" id="output" hidden>
+    <div id="output" hidden>
       <section class="card" id="trace-card">
         <div class="card-head">
           <h2>What the agent does</h2>
-          <span id="run-status" class="badge"></span>
+          <span id="run-time" class="muted"></span>
         </div>
-        <ol id="trace"></ol>
-        <p id="run-stats" class="muted"></p>
+        <p class="now"><span id="now-icon"></span><span id="now-text"></span></p>
+        <ol class="stages" id="stages"></ol>
+        <details id="all-steps">
+          <summary>Show all steps</summary>
+          <ol id="trace"></ol>
+          <p id="run-stats" class="muted"></p>
+        </details>
       </section>
 
-      <section id="results">
+      <div class="columns">
         <section class="card">
           <h2>Vacancies</h2>
           <p id="no-scores" class="muted">Scores appear here as the agent works.</p>
@@ -97,17 +102,19 @@
           </table>
         </section>
 
-        <section class="card">
-          <h2>Cover letters</h2>
-          <p id="no-drafts" class="muted">Drafts appear here. Each one waits for your approval.</p>
-          <div id="drafts"></div>
-        </section>
+        <section>
+          <section class="card">
+            <h2>Cover letters</h2>
+            <p id="no-drafts" class="muted">Drafts appear here. Each one waits for your approval.</p>
+            <div id="drafts"></div>
+          </section>
 
-        <section class="card" id="answer-card" hidden>
-          <h2>The agent's summary</h2>
-          <p id="answer" class="answer"></p>
+          <section class="card" id="answer-card" hidden>
+            <h2>The agent's summary</h2>
+            <p id="answer" class="answer"></p>
+          </section>
         </section>
-      </section>
+      </div>
     </div>
 
     <section class="card" id="letter" hidden>
