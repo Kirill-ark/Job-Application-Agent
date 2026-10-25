@@ -10,6 +10,7 @@ const CITATION = /\s*\[((?:p|e|ed|lang)\d+(?:\.f\d+)?|sk|av)((?:,\s*(?:(?:p|e|ed
 let current = null; // {runId, token}
 let openDraft = null; // the draft shown in the letter view
 let demo = null; // the saved demo run while it is being shown
+let lastRun = null; // the last run this browser started, kept in localStorage
 
 const $ = (id) => document.getElementById(id);
 
@@ -54,6 +55,8 @@ $("run-form").addEventListener("submit", async (event) => {
       body: JSON.stringify({ goal: $("goal").value }),
     });
     current = { runId: run.run_id, token: run.token };
+    lastRun = current;
+    $("last-run").hidden = true; // it is on screen already
     try { localStorage.setItem("lastRun", JSON.stringify(current)); } catch {}
     leaveDemo();
     closeLetter();
@@ -81,6 +84,8 @@ async function poll() {
   } catch (error) {
     if (error.message === "Run not found") {
       current = null;
+      lastRun = null;
+      $("last-run").hidden = true;
       try { localStorage.removeItem("lastRun"); } catch {}
       $("output").hidden = true;
     }
@@ -407,13 +412,15 @@ async function withButtons(action) {
   }
 }
 
-// After a reload, continue showing the last run of this browser.
+// The page opens empty. If this browser started a run before, offer to show it.
 try {
-  const saved = JSON.parse(localStorage.getItem("lastRun") || "null");
-  if (saved) {
-    current = saved;
-    $("output").hidden = false;
-    $("run-button").disabled = true;
-    poll();
-  }
+  lastRun = JSON.parse(localStorage.getItem("lastRun") || "null");
 } catch {}
+$("last-run").hidden = !lastRun;
+$("last-run").addEventListener("click", () => {
+  leaveDemo();
+  current = lastRun;
+  $("output").hidden = false;
+  $("run-button").disabled = true;
+  poll();
+});

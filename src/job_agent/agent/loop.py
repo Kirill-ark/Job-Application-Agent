@@ -58,8 +58,10 @@ Plan:
 Rules:
 - You cannot send, email or submit anything. The user reviews and sends letters.
 - Only report what the tools returned. Never invent vacancies, scores or drafts.
-- Final answer: a short list of the vacancies you scored (title, company, score,
-  label, main gaps) and which ones have a draft waiting for the user's approval.
+- Final answer: 2-4 sentences of plain text, no Markdown, no tables, no lists.
+  The page already shows the scores table and the drafts, so do not repeat them:
+  say which vacancy fits best and why, the most common gap, and how many letters
+  wait for the user's approval. Do not ask questions: the user cannot reply to you.
   Write it in the language of the user's goal."""
 
 
