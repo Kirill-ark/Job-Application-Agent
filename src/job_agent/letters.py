@@ -107,8 +107,16 @@ class Letter(BaseModel):
 
 
 def numbers_in(text: str) -> set[str]:
-    """Numbers in a text, written the same way: "5,800" and "5800" are both "5800"."""
-    return {re.sub(r",(?=\d{3}\b)", "", n) for n in NUMBER.findall(text)}
+    """Numbers in a text, written the same way.
+
+    A comma before exactly three digits separates thousands ("5,800" = "5800");
+    before one or two digits it is a German decimal comma ("0,74" = "0.74").
+    """
+    found = set()
+    for number in NUMBER.findall(text):
+        number = re.sub(r",(?=\d{3}\b)", "", number)
+        found.add(number.replace(",", "."))
+    return found
 
 
 def owner(fact_id: str) -> str:

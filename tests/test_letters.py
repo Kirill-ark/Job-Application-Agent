@@ -201,6 +201,7 @@ def test_number_not_in_cited_facts(cv: dict[str, Any], taxonomy: Taxonomy) -> No
 def test_thousands_separator_does_not_matter() -> None:
     assert numbers_in("about 5,800 images") == numbers_in("about 5800 images") == {"5800"}
     assert numbers_in("0.93 recall") == {"0.93"}
+    assert numbers_in("0,74 IoU") == numbers_in("0.74 IoU") == {"0.74"}  # German decimal comma
 
 
 def test_other_sentence_may_name_the_position(cv: dict[str, Any], taxonomy: Taxonomy) -> None:

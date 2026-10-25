@@ -11,6 +11,8 @@ let current = null; // {runId, token}
 let openDraft = null; // the draft shown in the letter view
 let demo = null; // the saved demo run while it is being shown
 let lastRun = null; // the last run this browser started, kept in localStorage
+let parsedCv = null; // the visitor's CV as read by the LLM
+let confirmedCv = null; // ... once the visitor confirmed it
 
 const $ = (id) => document.getElementById(id);
 
@@ -47,12 +49,17 @@ async function api(path, options = {}) {
 
 $("run-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const ownCv = usingOwnCv();
+  if (ownCv && !confirmedCv) {
+    showNotice("Read your CV and confirm it first.");
+    return;
+  }
   $("run-button").disabled = true;
   try {
     current = null;
     const run = await api("/api/runs", {
       method: "POST",
-      body: JSON.stringify({ goal: $("goal").value }),
+      body: JSON.stringify({ goal: $("goal").value, cv: ownCv ? confirmedCv : null }),
     });
     current = { runId: run.run_id, token: run.token };
     lastRun = current;
@@ -412,6 +419,88 @@ async function withButtons(action) {
     buttons.forEach((b) => (b.disabled = false));
   }
 }
+
+// The visitor's own CV: paste, read with the LLM, check, confirm.
+
+function usingOwnCv() {
+  return document.querySelector('input[name="cv"]:checked').value === "own";
+}
+
+function showCvLabel() {
+  if (!usingOwnCv()) $("cv-label").textContent = "CV: the example";
+  else if (confirmedCv) $("cv-label").textContent = `CV: yours (${confirmedCv.name || "no name"}), confirmed`;
+  else $("cv-label").textContent = "CV: yours, not confirmed yet";
+}
+
+for (const radio of document.querySelectorAll('input[name="cv"]')) {
+  radio.addEventListener("change", () => {
+    $("own-cv").hidden = !usingOwnCv();
+    $("cv-review").hidden = !usingOwnCv() || !parsedCv;
+    showCvLabel();
+  });
+}
+
+$("cv-text").addEventListener("input", () => {
+  // A changed text must be read and confirmed again.
+  if (confirmedCv) {
+    confirmedCv = null;
+    showCvConfirmed();
+    showCvLabel();
+  }
+});
+
+$("read-cv").addEventListener("click", async () => {
+  $("read-cv").disabled = true;
+  $("cv-reading").hidden = false;
+  $("notice").hidden = true;
+  try {
+    const result = await api("/api/cv/parse", {
+      method: "POST",
+      body: JSON.stringify({ text: $("cv-text").value }),
+    });
+    parsedCv = result.cv;
+    confirmedCv = null;
+    showCvReview(result);
+  } catch (error) {
+    showNotice(error.message);
+  } finally {
+    $("read-cv").disabled = false;
+    $("cv-reading").hidden = true;
+    showCvLabel();
+  }
+});
+
+function showCvReview(result) {
+  const cv = result.cv;
+  const parts = [cv.name, cv.headline, cv.location, cv.availability].filter(Boolean);
+  $("cv-profile").textContent = `${parts.join(" · ")} — looking for: ${cv.looking_for.join(", ") || "not stated"}`;
+  $("cv-verified").textContent = result.verified_skills.join(", ") || "none";
+  $("cv-unverified").textContent = result.unverified_skills.join(", ") || "none";
+
+  $("cv-warnings").hidden = result.warnings.length === 0;
+  $("cv-warnings").replaceChildren(...result.warnings.map((w) => el("li", { text: w })));
+  $("cv-facts").replaceChildren(
+    ...Object.entries(result.facts).map(([id, fact]) =>
+      el("li", {}, el("span", { class: "fact-id", text: id }), el("span", { text: fact })),
+    ),
+  );
+  showCvConfirmed();
+  $("cv-review").hidden = false;
+  $("cv-review").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showCvConfirmed() {
+  $("cv-confirmed").textContent = confirmedCv ? "confirmed" : "";
+  $("cv-confirmed").className = confirmedCv ? "badge approved" : "badge";
+  $("confirm-cv").hidden = confirmedCv !== null;
+}
+
+$("confirm-cv").addEventListener("click", () => {
+  confirmedCv = parsedCv;
+  showCvConfirmed();
+  showCvLabel();
+  $("start").scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 // The page opens empty. If this browser started a run before, a link shows it,
 // and the same link hides it again.

@@ -180,6 +180,7 @@ def test_location_component() -> None:
     assert location_component(make_vacancy(location="Munich"), "Berlin") == 0.0
     assert location_component(make_vacancy(location="Munich", remote=True), "Berlin") == 1.0
     assert location_component(make_vacancy(location=""), "Berlin") == 0.5
+    assert location_component(make_vacancy(), "") == 0.5  # a CV without a city
 
 
 def test_combine_multiplies_factors() -> None:

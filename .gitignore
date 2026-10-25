@@ -14,6 +14,8 @@ wheels/
 
 # Local data
 *.db
+*.db-wal
+*.db-shm
 
 # Tools
 .pytest_cache/

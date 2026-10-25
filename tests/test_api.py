@@ -42,7 +42,7 @@ def vacancy(job_id: str) -> dict[str, Any]:
     }
 
 
-async def fake_agent(goal: str, run_id: int, conn: sqlite3.Connection) -> None:
+async def fake_agent(goal: str, run_id: int, conn: sqlite3.Connection, cv_path: Path) -> None:
     job_id = f"job-{run_id}"
     upsert_vacancies(conn, [vacancy(job_id)])
     draft_id = save_draft(
@@ -86,7 +86,7 @@ async def fake_agent(goal: str, run_id: int, conn: sqlite3.Connection) -> None:
     finish_run(conn, run_id, "done", datetime.now(UTC).isoformat(), answer="Done")
 
 
-async def crashing_agent(goal: str, run_id: int, conn: sqlite3.Connection) -> None:
+async def crashing_agent(goal: str, run_id: int, conn: sqlite3.Connection, cv_path: Path) -> None:
     raise RuntimeError("the tool server did not start")
 
 

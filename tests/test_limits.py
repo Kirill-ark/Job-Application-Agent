@@ -70,7 +70,7 @@ def test_runs_per_day_for_everyone(tmp_path: Path, clock: Clock) -> None:
 def test_one_run_at_a_time(tmp_path: Path, clock: Clock) -> None:
     release = asyncio.Event()
 
-    async def slow_agent(goal: str, run_id: int, conn: sqlite3.Connection) -> None:
+    async def slow_agent(goal: str, run_id: int, conn: sqlite3.Connection, cv_path: Path) -> None:
         await release.wait()
 
     limits = Limits(runs_per_ip_per_day=100, runs_per_day=100, salt="s")

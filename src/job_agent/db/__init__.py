@@ -34,6 +34,23 @@ def connect(path: Path | None = None, any_thread: bool = False) -> sqlite3.Conne
     return conn
 
 
+# Columns added after a table was first created. CREATE TABLE IF NOT EXISTS
+# skips existing tables, so older databases get these with ALTER TABLE.
+# Add a line here whenever schema.sql gets a new column.
+ADDED_COLUMNS = [
+    ("drafts", "issues", "TEXT NOT NULL DEFAULT '[]'"),
+    ("runs", "answer", "TEXT"),
+    ("runs", "error", "TEXT"),
+    ("runs", "token_hash", "TEXT"),
+    ("runs", "own_cv", "INTEGER NOT NULL DEFAULT 0 CHECK (own_cv IN (0, 1))"),
+]
+
+
 def init_db(conn: sqlite3.Connection) -> None:
-    """Create all tables. Safe to call on every start."""
+    """Create all tables and add missing columns. Safe to call on every start."""
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    for table, column, definition in ADDED_COLUMNS:
+        existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+    conn.commit()

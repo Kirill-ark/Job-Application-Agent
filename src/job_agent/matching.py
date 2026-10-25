@@ -28,7 +28,7 @@ from job_agent.llm import Complete, LLMError
 from job_agent.skills import Taxonomy
 
 # Change this when the scoring logic changes, so cached scores are not reused.
-SCORING_VERSION = "2"
+SCORING_VERSION = "3"
 
 # A component value of 0 turns into this factor, a value of 1 into 1.0.
 FACTOR_FLOORS = {"level": 0.3, "german": 0.5, "location": 0.5}
@@ -155,8 +155,8 @@ def german_component(description: str, languages: list[dict[str, str]]) -> tuple
 def location_component(vacancy: dict[str, Any], cv_location: str) -> float:
     if vacancy["remote"]:
         return 1.0
-    if not vacancy["location"]:
-        return NO_INFORMATION
+    if not vacancy["location"] or not cv_location.strip():
+        return NO_INFORMATION  # an empty city would be "in" every location
     return 1.0 if cv_location.lower() in vacancy["location"].lower() else 0.0
 
 

@@ -6,6 +6,7 @@
     POST /api/runs/{run_id}/drafts/{draft_id}/decision   the human approves or rejects
     POST /api/runs/{run_id}/drafts/{draft_id}/export     the human takes the final text
     GET  /api/demo                                 the saved demo run, shown when a limit is hit
+    POST /api/cv/parse                             a pasted CV as the agent will see it
 
 The agent runs in the background; the page asks for progress every second.
 
@@ -25,24 +26,36 @@ import asyncio
 import hashlib
 import hmac
 import logging
+import os
 import secrets
+import shutil
 import sqlite3
+import tempfile
 from collections.abc import Awaitable, Callable, Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
+import yaml
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from job_agent.agent.loop import created_drafts, run_summary
 from job_agent.agent.runner import run_with_server
 from job_agent.api.limits import MESSAGES, Limits
 from job_agent.approvals import ApprovalError, approval_requests, decide, export_letter
 from job_agent.approvals import request_approval as add_request
-from job_agent.cv import DEFAULT_CV_PATH
+from job_agent.cv import CV, DEFAULT_CV_PATH, cv_data
+from job_agent.cv_parser import (
+    CV_SCHEMA,
+    MAX_CV_CHARS,
+    CVParseError,
+    check_parsed,
+    drop_used_skills,
+    parse_cv_text,
+)
 from job_agent.db import connect, default_db_path, init_db
 from job_agent.db.queries import (
     create_run,
@@ -53,20 +66,29 @@ from job_agent.db.queries import (
     get_vacancy,
 )
 from job_agent.letters import strip_citations
-from job_agent.llm import make_chat
+from job_agent.llm import DEFAULT_LETTER_MODEL, Complete, LLMError, make_chat, make_complete
 from job_agent.retention import fail_interrupted_runs, redact_old_runs
+from job_agent.skills import load_taxonomy
 
 logger = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
 FAILED_RUN = "The agent could not run. Please try again later."
 
-# (goal, run_id, connection) -> runs the agent and fills in the run.
-AgentRunner = Callable[[str, int, sqlite3.Connection], Awaitable[Any]]
+# A visitor may have the LLM read a CV this many times a day (kept in memory only).
+PARSES_PER_IP_PER_DAY = 10
+
+# (goal, run_id, connection, CV file) -> runs the agent and fills in the run.
+AgentRunner = Callable[[str, int, sqlite3.Connection, Path], Awaitable[Any]]
 
 
 class RunRequest(BaseModel):
     goal: str = Field(min_length=3, max_length=500)
+    cv: dict[str, Any] | None = None  # a confirmed parsed CV; None = the example CV
+
+
+class ParseRequest(BaseModel):
+    text: str = Field(min_length=50, max_length=MAX_CV_CHARS)
 
 
 class Decision(BaseModel):
@@ -90,8 +112,10 @@ def create_app(
     limits: Limits | None = None,
     trust_proxy: bool = False,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+    parse_llm: Complete | None = None,
 ) -> FastAPI:
-    """Build the app. Tests pass a fake `agent_runner`, limits, a clock and a temporary database.
+    """Build the app. Tests pass a fake `agent_runner`, `parse_llm`, limits, a clock and a
+    temporary database.
 
     `trust_proxy`: take the visitor's IP from X-Forwarded-For. Only behind a
     proxy that sets it (like Render's); otherwise anyone could fake their IP.
@@ -104,10 +128,19 @@ def create_app(
     redact_old_runs(conn, clock())
     conn.close()
 
-    async def real_agent(goal: str, run_id: int, conn: sqlite3.Connection) -> None:
-        await run_with_server(goal, cv_path, db_path, conn, make_chat(), run_id)
+    async def real_agent(
+        goal: str, run_id: int, conn: sqlite3.Connection, run_cv_path: Path
+    ) -> None:
+        await run_with_server(goal, run_cv_path, db_path, conn, make_chat(), run_id)
+
+    def real_parse_llm(system: str, user: str) -> str:
+        model = os.environ.get("GROQ_LETTER_MODEL") or DEFAULT_LETTER_MODEL
+        return make_complete(4000, CV_SCHEMA, model=model)(system, user)
 
     runner = agent_runner or real_agent
+    parse = parse_llm or real_parse_llm
+    taxonomy = load_taxonomy()
+    parses: dict[str, list[datetime]] = {}  # ip_hash -> times, for PARSES_PER_IP_PER_DAY
     app = FastAPI(title="Job Application Agent")
     app.state.tasks = set()  # keeps background runs alive until they finish
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -160,14 +193,22 @@ def create_app(
             return forwarded.split(",")[0].strip()
         return request.client.host if request.client else "unknown"
 
-    async def run_in_background(goal: str, run_id: int) -> None:
+    async def run_in_background(goal: str, run_id: int, cv: CV | None) -> None:
         conn = connect(db_path)
+        # A visitor's CV lives in a temporary file for this run only.
+        folder = Path(tempfile.mkdtemp(prefix="job-agent-cv-")) if cv else None
         try:
-            await runner(goal, run_id, conn)
+            run_cv_path = cv_path
+            if folder and cv:
+                run_cv_path = folder / "cv.yaml"
+                run_cv_path.write_text(yaml.safe_dump(cv.model_dump()), encoding="utf-8")
+            await runner(goal, run_id, conn, run_cv_path)
         except Exception:
             # Also a tool server that does not start, or no LLM key.
             logger.exception("Run %s crashed", run_id)
         finally:
+            if folder:
+                shutil.rmtree(folder, ignore_errors=True)
             run = get_run(conn, run_id)
             if run and run["status"] == "running":
                 finish_run(conn, run_id, "failed", _now(), error=FAILED_RUN)
@@ -190,13 +231,48 @@ def create_app(
         reason = limits.refusal(conn, ip_hash, now)
         if reason:
             raise HTTPException(429, {"reason": reason, "message": MESSAGES[reason]})
+        cv = None
+        if body.cv is not None:
+            try:
+                cv = CV.model_validate(body.cv)
+            except ValidationError as error:
+                raise HTTPException(422, "The CV is not valid. Please read it again.") from error
         token = secrets.token_urlsafe(24)
         goal = body.goal.strip()
-        run_id = create_run(conn, goal, now.isoformat(), ip_hash, hash_token(token))
-        task = asyncio.create_task(run_in_background(goal, run_id))
+        run_id = create_run(
+            conn, goal, now.isoformat(), ip_hash, hash_token(token), own_cv=cv is not None
+        )
+        task = asyncio.create_task(run_in_background(goal, run_id, cv))
         app.state.tasks.add(task)
         task.add_done_callback(app.state.tasks.discard)
         return {"run_id": run_id, "token": token}
+
+    @app.post("/api/cv/parse")
+    def parse_cv(body: ParseRequest, request: Request, conn: Db) -> dict[str, Any]:
+        """Read a pasted CV with the LLM. Nothing is stored: the browser keeps the result."""
+        now = clock()
+        ip_hash = limits.hash_ip(client_ip(request))
+        recent = [t for t in parses.get(ip_hash, []) if now - t < timedelta(hours=24)]
+        if len(recent) >= PARSES_PER_IP_PER_DAY:
+            message = "You have read enough CVs for today."
+            raise HTTPException(429, {"reason": "parse_limit", "message": message})
+        if limits.refusal(conn, ip_hash, now) == "busy":  # it shares the letter model's budget
+            raise HTTPException(429, {"reason": "busy", "message": MESSAGES["busy"]})
+        parses[ip_hash] = [*recent, now]
+        try:
+            cv = drop_used_skills(parse_cv_text(body.text, parse), taxonomy)
+        except LLMError as error:  # no API key
+            raise HTTPException(503, "Reading CVs is not available right now.") from error
+        except CVParseError as error:
+            raise HTTPException(422, str(error)) from error
+        data = cv_data(cv, taxonomy)
+        return {
+            "cv": cv.model_dump(),
+            "facts": data["facts"],
+            "verified_skills": [s for s, info in data["skills"].items() if info["verified"]],
+            "unverified_skills": [s for s, info in data["skills"].items() if not info["verified"]],
+            "warnings": check_parsed(cv, body.text),
+        }
 
     def run_view(conn: sqlite3.Connection, run: dict[str, Any]) -> dict[str, Any]:
         summary = run_summary(conn, run["id"])

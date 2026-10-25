@@ -206,12 +206,14 @@ def create_run(
     started_at: str,
     ip_hash: str | None = None,
     token_hash: str | None = None,
+    own_cv: bool = False,
 ) -> int:
     """Start an agent run and return its id."""
     with conn:
         cursor = conn.execute(
-            "INSERT INTO runs (goal, ip_hash, token_hash, started_at) VALUES (?, ?, ?, ?)",
-            (goal, ip_hash, token_hash, started_at),
+            "INSERT INTO runs (goal, ip_hash, token_hash, own_cv, started_at)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (goal, ip_hash, token_hash, int(own_cv), started_at),
         )
     return cursor.lastrowid
 

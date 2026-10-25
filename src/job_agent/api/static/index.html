@@ -21,12 +21,51 @@
       <form id="run-form">
         <label for="goal">What should the agent do?</label>
         <textarea id="goal" rows="2" maxlength="500" required>Find machine learning working student or internship jobs in Berlin for me and prepare cover letters for the best ones.</textarea>
+
+        <fieldset class="cv-choice">
+          <legend>Which CV?</legend>
+          <label class="option"><input type="radio" name="cv" value="example" checked>
+            The example CV <span class="muted">(Alex Example, a fictional CS student in Berlin)</span></label>
+          <label class="option"><input type="radio" name="cv" value="own"> My own CV</label>
+        </fieldset>
+
+        <div id="own-cv" hidden>
+          <textarea id="cv-text" rows="10" maxlength="12000"
+            placeholder="Paste your CV as text: education, jobs, projects, skills, languages."></textarea>
+          <p class="hint">
+            Your CV text is sent to Groq, the LLM provider, to be read. It is not stored: the
+            parsed CV stays in your browser and is used for your run only. Letters and the run
+            are deleted after 24 hours.
+          </p>
+          <button type="button" class="secondary" id="read-cv">Read my CV</button>
+          <span id="cv-reading" class="muted" hidden>Reading your CV…</span>
+        </div>
+
         <div class="form-row">
-          <span class="muted">CV: fictional example (Alex Example, CS student in Berlin)
+          <span class="muted"><span id="cv-label">CV: the example</span>
             <button type="button" class="link" id="last-run" hidden>Show my last run</button></span>
           <button type="submit" id="run-button">Run the agent</button>
         </div>
       </form>
+    </section>
+
+    <section class="card" id="cv-review" hidden>
+      <div class="card-head">
+        <h2>Your CV as the agent will see it</h2>
+        <span id="cv-confirmed" class="badge"></span>
+      </div>
+      <p class="hint">
+        Letters may only use these facts. Check that nothing is missing, changed or made up,
+        then confirm. To fix something, change your text and read it again.
+      </p>
+      <ul id="cv-warnings" class="warnings" hidden></ul>
+      <p id="cv-profile"></p>
+      <p><b>Skills used in jobs or projects:</b> <span id="cv-verified"></span></p>
+      <p><b>Only listed:</b> <span id="cv-unverified"></span></p>
+      <ol id="cv-facts" class="facts"></ol>
+      <div class="buttons">
+        <button type="button" id="confirm-cv">Looks right, use it</button>
+      </div>
     </section>
 
     <section class="notice" id="notice" hidden>

@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS runs (
     answer      TEXT,                           -- the agent's final message
     error       TEXT,                           -- why the run failed
     is_demo     INTEGER NOT NULL DEFAULT 0 CHECK (is_demo IN (0, 1)),
+    own_cv      INTEGER NOT NULL DEFAULT 0 CHECK (own_cv IN (0, 1)),  -- a visitor's CV
     started_at  TEXT NOT NULL,
     finished_at TEXT
 );

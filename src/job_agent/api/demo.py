@@ -29,6 +29,11 @@ def main() -> None:
             )
         return
     run_id = int(sys.argv[1])
+    run = conn.execute("SELECT own_cv FROM runs WHERE id = ?", (run_id,)).fetchone()
+    if run and run["own_cv"]:
+        sys.exit(
+            f"Run {run_id} used a visitor's CV: the demo is public, so it must use the example"
+        )
     summary = run_summary(conn, run_id)
     if summary["status"] != "done" or not summary["drafts"]:
         sys.exit(f"Run {run_id} is not a finished run with drafts")

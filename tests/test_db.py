@@ -123,3 +123,20 @@ def test_current_vacancies_are_from_the_latest_refresh(conn: sqlite3.Connection)
 
 def test_empty_cache_has_no_fetch_time(conn: sqlite3.Connection) -> None:
     assert last_fetched_at(conn) is None
+
+
+def test_old_database_gets_new_columns(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "old.db")
+    # A runs table from before token_hash and own_cv existed.
+    conn.execute(
+        "CREATE TABLE runs (id INTEGER PRIMARY KEY, goal TEXT NOT NULL, "
+        "status TEXT NOT NULL DEFAULT 'running', ip_hash TEXT, trace TEXT NOT NULL DEFAULT '[]', "
+        "is_demo INTEGER NOT NULL DEFAULT 0, started_at TEXT NOT NULL, finished_at TEXT)"
+    )
+    conn.execute("INSERT INTO runs (goal, started_at) VALUES ('old run', ?)", (NOW,))
+    init_db(conn)
+    init_db(conn)  # twice is fine
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(runs)")}
+    assert {"answer", "error", "token_hash", "own_cv"} <= columns
+    assert conn.execute("SELECT goal, own_cv FROM runs").fetchone()[:] == ("old run", 0)
+    conn.close()

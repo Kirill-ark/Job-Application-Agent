@@ -153,8 +153,11 @@ def read_cv(path: Path = DEFAULT_CV_PATH, taxonomy: Taxonomy | None = None) -> d
 
     This is what the `read_cv` MCP tool returns.
     """
-    cv = load_cv(path)
-    taxonomy = taxonomy or load_taxonomy()
+    return cv_data(load_cv(path), taxonomy or load_taxonomy())
+
+
+def cv_data(cv: CV, taxonomy: Taxonomy) -> dict[str, Any]:
+    """The plain data of `read_cv`, for a CV that is already loaded."""
     return {
         "name": cv.name,
         "headline": cv.headline,
