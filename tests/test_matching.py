@@ -127,11 +127,11 @@ def test_skills_component(cv: dict[str, Any]) -> None:
     assert gaps == ["AWS", "Kubernetes (listed in the CV, but not used in a project or job)"]
 
 
-def test_vacancy_without_known_skills_is_neutral(cv: dict[str, Any]) -> None:
+def test_vacancy_without_known_skills_is_probably_not_tech(cv: dict[str, Any]) -> None:
     value, matched, gaps = skills_component({}, cv["skills"])
-    assert value == 0.5
+    assert value == 0.25
     assert matched == []
-    assert gaps == ["The vacancy names no skills we can compare"]
+    assert gaps == ["The vacancy names none of the tech skills we know"]
 
 
 # Level, German, location
@@ -183,6 +183,11 @@ def test_location_component() -> None:
     assert location_component(make_vacancy(), "") == 0.5  # a CV without a city
 
 
+def test_internship_elsewhere_is_possible_working_student_is_not() -> None:
+    assert location_component(make_vacancy(location="Munich", level="intern"), "Berlin") == 0.5
+    assert location_component(make_vacancy(location="Munich", level="student"), "Berlin") == 0.0
+
+
 def test_combine_multiplies_factors() -> None:
     perfect = {"skills": 1.0, "level": 1.0, "german": 1.0, "location": 1.0}
     assert combine(perfect) == 100
@@ -197,7 +202,7 @@ def test_one_matched_skill_is_not_a_perfect_fit(cv: dict[str, Any]) -> None:
 
 
 def test_label_thresholds() -> None:
-    assert [label(s) for s in (100, 65, 64, 40, 39, 0)] == [
+    assert [label(s) for s in (100, 65, 64, 30, 29, 0)] == [
         "good",
         "good",
         "maybe",

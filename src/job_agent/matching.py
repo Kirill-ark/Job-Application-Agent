@@ -28,11 +28,11 @@ from job_agent.llm import Complete, LLMError
 from job_agent.skills import Taxonomy
 
 # Change this when the scoring logic changes, so cached scores are not reused.
-SCORING_VERSION = "3"
+SCORING_VERSION = "4"
 
 # A component value of 0 turns into this factor, a value of 1 into 1.0.
 FACTOR_FLOORS = {"level": 0.3, "german": 0.5, "location": 0.5}
-GOOD_FROM, MAYBE_FROM = 65, 40
+GOOD_FROM, MAYBE_FROM = 65, 30  # MAYBE_FROM was 40; evals on the tune split
 
 # Smoothing: the skill share is pulled toward 0.5 as if the vacancy also had
 # this much weight of skills we know nothing about. With one matched skill out
@@ -42,6 +42,8 @@ PRIOR_WEIGHT = 2
 TITLE_SKILL_WEIGHT = 2  # a skill in the title counts double
 UNVERIFIED_CREDIT = 0.5  # skill only listed in other_skills
 NO_INFORMATION = 0.5  # used when a component cannot be judged
+NO_SKILLS_FOUND = 0.25  # the ad names no tech skill at all
+INTERNSHIP_ELSEWHERE = 0.5  # an internship in another city
 
 LANGUAGE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2", "native"]
 
@@ -100,7 +102,9 @@ def skills_component(
     Returns (value, matched, gaps).
     """
     if not wanted:
-        return NO_INFORMATION, [], ["The vacancy names no skills we can compare"]
+        # The vocabulary covers tech skills: an ad that names none of them is
+        # almost never a tech job (found by the evals: marketing, IT support).
+        return NO_SKILLS_FOUND, [], ["The vacancy names none of the tech skills we know"]
     earned = 0.0
     matched, gaps = [], []
     for skill, weight in sorted(wanted.items(), key=lambda item: (-item[1], item[0])):
@@ -157,7 +161,11 @@ def location_component(vacancy: dict[str, Any], cv_location: str) -> float:
         return 1.0
     if not vacancy["location"] or not cv_location.strip():
         return NO_INFORMATION  # an empty city would be "in" every location
-    return 1.0 if cv_location.lower() in vacancy["location"].lower() else 0.0
+    if cv_location.lower() in vacancy["location"].lower():
+        return 1.0
+    # People move for a full-time internship of a few months, not for a
+    # working student job that runs alongside their studies.
+    return INTERNSHIP_ELSEWHERE if vacancy["level"] == "intern" else 0.0
 
 
 def factor(name: str, value: float) -> float:

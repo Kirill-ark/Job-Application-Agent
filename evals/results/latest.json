@@ -1,0 +1,970 @@
+{
+ "matching": {
+  "pairs": 47,
+  "accuracy": {
+   "all": 0.7659574468085106,
+   "tune": 0.7931034482758621,
+   "holdout": 0.7222222222222222
+  },
+  "balanced_accuracy": {
+   "all": 0.7172364672364672,
+   "tune": 0.7666666666666666,
+   "holdout": 0.6833333333333332
+  },
+  "recall": {
+   "good": 0.5555555555555556,
+   "maybe": 0.75,
+   "bad": 0.8461538461538461
+  },
+  "confusion": {
+   "good": {
+    "good": 5,
+    "maybe": 4,
+    "bad": 0
+   },
+   "maybe": {
+    "good": 0,
+    "maybe": 9,
+    "bad": 3
+   },
+   "bad": {
+    "good": 0,
+    "maybe": 4,
+    "bad": 22
+   }
+  },
+  "misses": [
+   {
+    "vacancy": "working-student-ai-engineering-document-intelligence-berlin-378393",
+    "title": "Working Student — AI Engineering & Document Intelligence",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 64,
+    "components": {
+     "skills": 0.64,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "AI working student role in Berlin; RAG chatbot with LangChain in the CV"
+   },
+   {
+    "vacancy": "member-of-technical-staff-mts-intern-berlin-253567",
+    "title": "Member of Technical Staff (MTS) Intern (m/f/d)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 40,
+    "components": {
+     "skills": 0.4,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "engineering internship in Berlin at an AI-native company; English ad"
+   },
+   {
+    "vacancy": "member-of-technical-staff-mts-intern-berlin-253567",
+    "title": "Member of Technical Staff (MTS) Intern (m/f/d)",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 40,
+    "components": {
+     "skills": 0.4,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "engineering internship in Berlin at an AI-native company"
+   },
+   {
+    "vacancy": "synthetic-working-student-nlp-berlin",
+    "title": "Working Student NLP / Machine Learning",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 64,
+    "components": {
+     "skills": 0.64,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "ML working student in Berlin; Python, PyTorch, FastAPI, Docker in the CV"
+   },
+   {
+    "vacancy": "synthetic-junior-data-analyst-berlin",
+    "title": "Junior Data Analyst (m/w/d)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "bad",
+    "score": 29,
+    "components": {
+     "skills": 0.4,
+     "level": 0.6,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "data role in Berlin, but a full-time junior position and Tableau is missing"
+   },
+   {
+    "vacancy": "synthetic-junior-data-analyst-berlin",
+    "title": "Junior Data Analyst (m/w/d)",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "bad",
+    "score": 29,
+    "components": {
+     "skills": 0.4,
+     "level": 0.6,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "data role in Berlin, but a full-time junior position and Tableau is missing"
+   },
+   {
+    "vacancy": "praktikum-anwendungsentwicklung-berlin-174622",
+    "title": "Praktikum Anwendungsentwicklung (w/m/d)",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "bad",
+    "score": 19,
+    "components": {
+     "skills": 0.19,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "development internship in Berlin, German is fine, but the stack (JavaScript, PHP) is not in the CV"
+   },
+   {
+    "vacancy": "intern-technology-consultant-data-ai-munich-355551",
+    "title": "Intern Technology Consultant - Data & AI",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 45,
+    "components": {
+     "skills": 0.6,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "a consulting internship rather than engineering, and in Munich"
+   },
+   {
+    "vacancy": "ai-engineer-tech-stagaire-rotterdam-484113",
+    "title": "AI Engineer - Tech Stagaire",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 50,
+    "components": {
+     "skills": 0.67,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "requires Dutch"
+   },
+   {
+    "vacancy": "legal-counsel-it-data-protection-berlin-130040",
+    "title": "Legal Counsel - IT & Data Protection",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 44,
+    "components": {
+     "skills": 0.67,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "legal role, a different field"
+   },
+   {
+    "vacancy": "legal-counsel-it-data-protection-berlin-130040",
+    "title": "Legal Counsel - IT & Data Protection",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 44,
+    "components": {
+     "skills": 0.67,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "legal role, a different field"
+   }
+  ],
+  "rows": [
+   {
+    "vacancy": "internship-machine-learning-research-engineer-berlin-168024",
+    "title": "Internship - Machine Learning Research Engineer",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "good",
+    "predicted": "good",
+    "score": 86,
+    "components": {
+     "skills": 0.86,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "ML research internship in Berlin; PyTorch and ML projects in the CV"
+   },
+   {
+    "vacancy": "internship-machine-learning-research-engineer-berlin-168024",
+    "title": "Internship - Machine Learning Research Engineer",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "good",
+    "predicted": "good",
+    "score": 86,
+    "components": {
+     "skills": 0.86,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "ML research internship in Berlin; PyTorch and ML work in the CV"
+   },
+   {
+    "vacancy": "working-student-ai-engineering-document-intelligence-berlin-378393",
+    "title": "Working Student — AI Engineering & Document Intelligence",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "good",
+    "predicted": "good",
+    "score": 71,
+    "components": {
+     "skills": 0.71,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "AI working student role in Berlin, remote possible; RAG and LLM project in the CV"
+   },
+   {
+    "vacancy": "working-student-ai-engineering-document-intelligence-berlin-378393",
+    "title": "Working Student — AI Engineering & Document Intelligence",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 64,
+    "components": {
+     "skills": 0.64,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "AI working student role in Berlin; RAG chatbot with LangChain in the CV"
+   },
+   {
+    "vacancy": "member-of-technical-staff-mts-intern-berlin-253567",
+    "title": "Member of Technical Staff (MTS) Intern (m/f/d)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 40,
+    "components": {
+     "skills": 0.4,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "engineering internship in Berlin at an AI-native company; English ad"
+   },
+   {
+    "vacancy": "member-of-technical-staff-mts-intern-berlin-253567",
+    "title": "Member of Technical Staff (MTS) Intern (m/f/d)",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 40,
+    "components": {
+     "skills": 0.4,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "engineering internship in Berlin at an AI-native company"
+   },
+   {
+    "vacancy": "synthetic-working-student-nlp-berlin",
+    "title": "Working Student NLP / Machine Learning",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "good",
+    "predicted": "good",
+    "score": 91,
+    "components": {
+     "skills": 0.91,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "NLP working student in Berlin; PyTorch, scikit-learn, FastAPI, Docker all in the CV"
+   },
+   {
+    "vacancy": "synthetic-working-student-nlp-berlin",
+    "title": "Working Student NLP / Machine Learning",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "good",
+    "predicted": "maybe",
+    "score": 64,
+    "components": {
+     "skills": 0.64,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "ML working student in Berlin; Python, PyTorch, FastAPI, Docker in the CV"
+   },
+   {
+    "vacancy": "synthetic-werkstudent-data-engineering-berlin",
+    "title": "Werkstudent Data Engineering (m/w/d)",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "good",
+    "predicted": "good",
+    "score": 83,
+    "components": {
+     "skills": 0.83,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "data engineering working student in Berlin; Airflow and PostgreSQL in the CV; native German"
+   },
+   {
+    "vacancy": "synthetic-werkstudent-data-engineering-berlin",
+    "title": "Werkstudent Data Engineering (m/w/d)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 62,
+    "components": {
+     "skills": 0.83,
+     "level": 1.0,
+     "german": 0.5,
+     "location": 1.0
+    },
+    "why": "fits the CV's Python/SQL/Airflow work, but asks for fluent German and the CV has B2"
+   },
+   {
+    "vacancy": "intern-deployment-engineer-data-ai-munich-356741",
+    "title": "Intern Deployment Engineer - Data & AI",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 45,
+    "components": {
+     "skills": 0.6,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "data & AI internship, but in Munich"
+   },
+   {
+    "vacancy": "intern-deployment-engineer-data-ai-munich-356741",
+    "title": "Intern Deployment Engineer - Data & AI",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 45,
+    "components": {
+     "skills": 0.6,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "data & AI internship, but in Munich"
+   },
+   {
+    "vacancy": "ml-intern-optimization-quality-monitoring-zurich-167634",
+    "title": "ML Intern: Optimization Quality & Monitoring",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 35,
+    "components": {
+     "skills": 0.62,
+     "level": 1.0,
+     "german": 0.5,
+     "location": 0.5
+    },
+    "why": "ML internship, but in Zürich"
+   },
+   {
+    "vacancy": "ml-intern-optimization-quality-monitoring-zurich-167634",
+    "title": "ML Intern: Optimization Quality & Monitoring",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 38,
+    "components": {
+     "skills": 0.5,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "ML internship, but in Zürich"
+   },
+   {
+    "vacancy": "synthetic-praktikum-computer-vision-hamburg",
+    "title": "Praktikum Computer Vision (m/w/d)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 62,
+    "components": {
+     "skills": 0.83,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "computer vision internship matching the X-ray project, but in Hamburg"
+   },
+   {
+    "vacancy": "synthetic-praktikum-computer-vision-hamburg",
+    "title": "Praktikum Computer Vision (m/w/d)",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 62,
+    "components": {
+     "skills": 0.83,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "segmentation internship matching the thesis, but in Hamburg"
+   },
+   {
+    "vacancy": "synthetic-junior-data-analyst-berlin",
+    "title": "Junior Data Analyst (m/w/d)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "bad",
+    "score": 29,
+    "components": {
+     "skills": 0.4,
+     "level": 0.6,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "data role in Berlin, but a full-time junior position and Tableau is missing"
+   },
+   {
+    "vacancy": "synthetic-junior-data-analyst-berlin",
+    "title": "Junior Data Analyst (m/w/d)",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "bad",
+    "score": 29,
+    "components": {
+     "skills": 0.4,
+     "level": 0.6,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "data role in Berlin, but a full-time junior position and Tableau is missing"
+   },
+   {
+    "vacancy": "synthetic-working-student-backend-go-berlin",
+    "title": "Working Student Backend Engineering",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 50,
+    "components": {
+     "skills": 0.5,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "working student in Berlin, but the core stack (Go, Kubernetes, AWS) is not used in the CV"
+   },
+   {
+    "vacancy": "synthetic-working-student-backend-go-berlin",
+    "title": "Working Student Backend Engineering",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "maybe",
+    "score": 38,
+    "components": {
+     "skills": 0.38,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "working student in Berlin, but the core stack (Go, Kubernetes, AWS) is not used in the CV"
+   },
+   {
+    "vacancy": "praktikum-anwendungsentwicklung-berlin-174622",
+    "title": "Praktikum Anwendungsentwicklung (w/m/d)",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "maybe",
+    "predicted": "bad",
+    "score": 19,
+    "components": {
+     "skills": 0.19,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "development internship in Berlin, German is fine, but the stack (JavaScript, PHP) is not in the CV"
+   },
+   {
+    "vacancy": "praktikum-anwendungsentwicklung-berlin-174622",
+    "title": "Praktikum Anwendungsentwicklung (w/m/d)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 19,
+    "components": {
+     "skills": 0.25,
+     "level": 1.0,
+     "german": 0.5,
+     "location": 1.0
+    },
+    "why": "asks for very good German (CV has B2) and a JavaScript/PHP stack the CV lacks: two drawbacks"
+   },
+   {
+    "vacancy": "werkstudent-data-science-offenbach-am-main-410864",
+    "title": "Werkstudent (w/m/d) Data Science",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 19,
+    "components": {
+     "skills": 0.38,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.0
+    },
+    "why": "working student role in Offenbach, not remote; it runs alongside studies in Berlin"
+   },
+   {
+    "vacancy": "werkstudent-data-science-offenbach-am-main-410864",
+    "title": "Werkstudent (w/m/d) Data Science",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 16,
+    "components": {
+     "skills": 0.31,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.0
+    },
+    "why": "working student role in Offenbach, not remote; it runs alongside studies in Berlin"
+   },
+   {
+    "vacancy": "intern-technology-consultant-data-ai-munich-355551",
+    "title": "Intern Technology Consultant - Data & AI",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 45,
+    "components": {
+     "skills": 0.6,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "a consulting internship rather than engineering, and in Munich"
+   },
+   {
+    "vacancy": "ai-engineer-tech-stagaire-rotterdam-484113",
+    "title": "AI Engineer - Tech Stagaire",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 50,
+    "components": {
+     "skills": 0.67,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.5
+    },
+    "why": "requires Dutch"
+   },
+   {
+    "vacancy": "junior-ai-application-engineer-ai-products-llm-rag-munich-5253",
+    "title": "Junior AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 12,
+    "components": {
+     "skills": 0.45,
+     "level": 0.6,
+     "german": 0.5,
+     "location": 0.0
+    },
+    "why": "full-time junior role in Munich: two drawbacks"
+   },
+   {
+    "vacancy": "junior-ai-application-engineer-ai-products-llm-rag-munich-5253",
+    "title": "Junior AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 17,
+    "components": {
+     "skills": 0.47,
+     "level": 0.6,
+     "german": 1.0,
+     "location": 0.0
+    },
+    "why": "full-time junior role in Munich: two drawbacks"
+   },
+   {
+    "vacancy": "machine-learning-engineer-berlin-325189",
+    "title": "Machine Learning Engineer (m/f/x)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 23,
+    "components": {
+     "skills": 0.35,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "asks the person to own production ML deployment: an experienced role"
+   },
+   {
+    "vacancy": "machine-learning-engineer-berlin-325189",
+    "title": "Machine Learning Engineer (m/f/x)",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 20,
+    "components": {
+     "skills": 0.31,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "asks the person to own production ML deployment: an experienced role"
+   },
+   {
+    "vacancy": "software-developer-java-nodejs-web-development-team-berlin-munich-101048",
+    "title": "Software Developer  Java/ Node.JS (Web Development Team)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 10,
+    "components": {
+     "skills": 0.15,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "full-time Java/Node.js developer owning services end to end"
+   },
+   {
+    "vacancy": "ai-ml-engineer-germany-63592",
+    "title": "AI/ML Engineer",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 20,
+    "components": {
+     "skills": 0.62,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 0.0
+    },
+    "why": "full-time AI/ML engineer building and running products, not a student role"
+   },
+   {
+    "vacancy": "ai-ml-engineer-germany-63592",
+    "title": "AI/ML Engineer",
+    "cv": "jonas",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 16,
+    "components": {
+     "skills": 0.5,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 0.0
+    },
+    "why": "full-time AI/ML engineer building and running products, not a student role"
+   },
+   {
+    "vacancy": "ai-application-engineer-ai-products-llm-rag-berlin-377089",
+    "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 13,
+    "components": {
+     "skills": 0.43,
+     "level": 0.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "experienced AI application engineer"
+   },
+   {
+    "vacancy": "senior-ai-engineer-document-intelligence-berlin-227489",
+    "title": "Senior AI Engineer — Document Intelligence",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 24,
+    "components": {
+     "skills": 0.8,
+     "level": 0.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "senior role"
+   },
+   {
+    "vacancy": "senior-machine-learning-engineer-london-170409",
+    "title": "Senior Machine Learning Engineer",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 9,
+    "components": {
+     "skills": 0.58,
+     "level": 0.0,
+     "german": 1.0,
+     "location": 0.0
+    },
+    "why": "senior role in London"
+   },
+   {
+    "vacancy": "legal-counsel-it-data-protection-berlin-130040",
+    "title": "Legal Counsel - IT & Data Protection",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 44,
+    "components": {
+     "skills": 0.67,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "legal role, a different field"
+   },
+   {
+    "vacancy": "legal-counsel-it-data-protection-berlin-130040",
+    "title": "Legal Counsel - IT & Data Protection",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "maybe",
+    "score": 44,
+    "components": {
+     "skills": 0.67,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "legal role, a different field"
+   },
+   {
+    "vacancy": "junior-sales-manager-berlin-492508",
+    "title": "Junior Sales Manager (m/w/d)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 18,
+    "components": {
+     "skills": 0.25,
+     "level": 0.6,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "sales, a different field"
+   },
+   {
+    "vacancy": "praktikum-digitales-marketing-social-media-berlin-498326",
+    "title": "Praktikum Digitales Marketing & Social Media (w/m/d)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 25,
+    "components": {
+     "skills": 0.25,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "marketing, a different field"
+   },
+   {
+    "vacancy": "working-student-it-asset-stock-management-berlin-berlin-203973",
+    "title": "Working Student - IT Asset & Stock Management (x/f/m)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 19,
+    "components": {
+     "skills": 0.25,
+     "level": 1.0,
+     "german": 0.5,
+     "location": 1.0
+    },
+    "why": "IT asset management, a different field; asks for fluent German"
+   },
+   {
+    "vacancy": "working-student-it-asset-stock-management-berlin-berlin-203973",
+    "title": "Working Student - IT Asset & Stock Management (x/f/m)",
+    "cv": "jonas",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 25,
+    "components": {
+     "skills": 0.25,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "IT asset management, a different field"
+   },
+   {
+    "vacancy": "ki-weg-verwalter-berlin-255495",
+    "title": "KI WEG- Verwalter (m/f/d)",
+    "cv": "alex",
+    "split": "holdout",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 21,
+    "components": {
+     "skills": 0.33,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "property management; 'KI' in the title is the company's angle, not the job"
+   },
+   {
+    "vacancy": "gtm-founders-associate-intern-vertical-ai-startup-berlin-55527",
+    "title": "GTM - Founder's Associate Intern (m/w/d), Vertical AI Startup",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 19,
+    "components": {
+     "skills": 0.25,
+     "level": 1.0,
+     "german": 0.5,
+     "location": 1.0
+    },
+    "why": "a business (go-to-market) internship, a different field"
+   },
+   {
+    "vacancy": "software-engineer-java-berlin-377662",
+    "title": "Software Engineer (Java) - (m/f/d)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 25,
+    "components": {
+     "skills": 0.38,
+     "level": 0.5,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "full-time Java engineer, a different stack"
+   },
+   {
+    "vacancy": "stage-data-engineer-reporting-bi-f-h-mars-2027-pouzauges-468050",
+    "title": "STAGE - Data Engineer/Reporting BI F/H - Mars 2027",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 25,
+    "components": {
+     "skills": 0.5,
+     "level": 1.0,
+     "german": 1.0,
+     "location": 0.0
+    },
+    "why": "internship in France, ad in French"
+   },
+   {
+    "vacancy": "data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939",
+    "title": "Data Scientist (Kaggle/DrivenData) (Remote-Worldwide)",
+    "cv": "alex",
+    "split": "tune",
+    "expected": "bad",
+    "predicted": "bad",
+    "score": 15,
+    "components": {
+     "skills": 0.5,
+     "level": 0.0,
+     "german": 1.0,
+     "location": 1.0
+    },
+    "why": "experienced data scientist role"
+   }
+  ],
+  "ran_at": "2026-10-25T20:43:31+00:00"
+ }
+}
