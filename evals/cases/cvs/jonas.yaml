@@ -1,0 +1,48 @@
+# Second fictional CV for the evals: a master's student with German as native
+# language, so German-only vacancies are not blocked by the language.
+name: Jonas Beispiel
+headline: M.Sc. Computer Science student at TU Berlin
+location: Berlin
+availability: Working student, up to 20 hours per week
+looking_for: [student, intern]
+
+education:
+  - degree: M.Sc. Computer Science
+    institution: Technische Universität Berlin
+    start: 2025-10
+  - degree: B.Sc. Computer Science
+    institution: Universität Potsdam
+    start: 2021-10
+    end: 2025-09
+
+experience:
+  - role: Working Student Machine Learning
+    company: Muster Logistics GmbH
+    start: 2024-04
+    end: 2025-08
+    tech: [Python, XGBoost, Airflow, PostgreSQL]
+    facts:
+      - Developed a delivery time forecasting model with Python and XGBoost, reducing the error by 18 %
+      - Built data pipelines with Airflow and PostgreSQL
+
+projects:
+  - name: Bachelor thesis
+    description: Image segmentation of satellite images with PyTorch (U-Net)
+    tech: [PyTorch, Computer Vision]
+    facts:
+      - Reached 0.74 IoU on the test set
+  - name: Study regulations chatbot
+    description: RAG chatbot that answers questions about the study regulations
+    tech: [RAG, LangChain, FastAPI, Docker]
+    facts:
+      - Deployed the chatbot in Docker
+
+other_skills: [Git, Kubernetes]
+
+languages:
+  - language: German
+    level: native
+  - language: English
+    level: C1
+  - language: Spanish
+    level: B1

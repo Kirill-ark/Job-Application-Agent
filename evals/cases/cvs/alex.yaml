@@ -1,0 +1,58 @@
+# Fictional example CV used by the demo and the tests.
+#
+# Skills are not listed on their own: they come from the `tech` of projects
+# and jobs, so every skill has evidence. Skills without a project or job go
+# into `other_skills` and count as unverified.
+# Every fact gets an ID when the CV is loaded (p1.f1, e1.f1, ...), and cover
+# letters must cite these IDs.
+
+name: Alex Example
+headline: Computer Science student focused on machine learning and backend
+location: Berlin
+availability: Werkstudent, up to 20 hours per week
+looking_for: [student, intern]
+
+education:
+  - degree: B.Sc. Computer Science
+    institution: Example University of Applied Sciences Berlin
+    start: 2024-10
+
+experience:
+  - role: Working Student, Data
+    company: Example Retail GmbH
+    start: 2025-04
+    end: 2025-09
+    tech: [Python, SQL, PostgreSQL, pandas, Airflow]
+    facts:
+      - Built Python ETL scripts that load weekly sales data into PostgreSQL
+      - Automated a weekly sales report that the team previously built by hand
+
+projects:
+  - name: Pneumonia X-Ray Classifier
+    description: Image classifier that detects pneumonia on chest X-rays
+    tech: [Python, PyTorch, Computer Vision, Docker]
+    facts:
+      - Fine-tuned a pretrained ResNet18 on about 5,800 chest X-ray images
+      - Reached 0.93 recall on the held-out test set
+  - name: Support Ticket Classifier
+    description: NLP model that routes customer support tickets to the right team
+    tech: [Python, sklearn, NLP, FastAPI, Docker]
+    facts:
+      - Trained a TF-IDF and logistic regression model on 20,000 labeled tickets
+      - Served the model through a FastAPI endpoint in a Docker container
+  - name: Chat With Your Docs
+    description: RAG app that answers questions about uploaded PDF files with page citations
+    tech: [Python, RAG, LLM, Git]
+    facts:
+      - Measured retrieval hit rate on a hand-written question set
+      - Compared two embedding models on answer quality and memory use
+
+other_skills: [Kubernetes, AWS]
+
+languages:
+  - language: English
+    level: C1
+  - language: German
+    level: B2
+  - language: Russian
+    level: native

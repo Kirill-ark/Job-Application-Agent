@@ -1,0 +1,238 @@
+# Expected label for each vacancy-CV pair, following RUBRIC.md.
+# Drafted without looking at the system's scores; checked by the project owner.
+# split: tune = may be used to adjust the scoring; holdout = only measured, never tuned on.
+- vacancy: internship-machine-learning-research-engineer-berlin-168024
+  cv: alex
+  label: good
+  why: ML research internship in Berlin; PyTorch and ML projects in the CV
+  split: tune
+- vacancy: internship-machine-learning-research-engineer-berlin-168024
+  cv: jonas
+  label: good
+  why: ML research internship in Berlin; PyTorch and ML work in the CV
+  split: tune
+- vacancy: working-student-ai-engineering-document-intelligence-berlin-378393
+  cv: alex
+  label: good
+  why: AI working student role in Berlin, remote possible; RAG and LLM project in the CV
+  split: holdout
+- vacancy: working-student-ai-engineering-document-intelligence-berlin-378393
+  cv: jonas
+  label: good
+  why: AI working student role in Berlin; RAG chatbot with LangChain in the CV
+  split: tune
+- vacancy: member-of-technical-staff-mts-intern-berlin-253567
+  cv: alex
+  label: good
+  why: engineering internship in Berlin at an AI-native company; English ad
+  split: holdout
+- vacancy: member-of-technical-staff-mts-intern-berlin-253567
+  cv: jonas
+  label: good
+  why: engineering internship in Berlin at an AI-native company
+  split: holdout
+- vacancy: synthetic-working-student-nlp-berlin
+  cv: alex
+  label: good
+  why: NLP working student in Berlin; PyTorch, scikit-learn, FastAPI, Docker all in the CV
+  split: tune
+- vacancy: synthetic-working-student-nlp-berlin
+  cv: jonas
+  label: good
+  why: ML working student in Berlin; Python, PyTorch, FastAPI, Docker in the CV
+  split: holdout
+- vacancy: synthetic-werkstudent-data-engineering-berlin
+  cv: jonas
+  label: good
+  why: data engineering working student in Berlin; Airflow and PostgreSQL in the CV; native German
+  split: tune
+- vacancy: synthetic-werkstudent-data-engineering-berlin
+  cv: alex
+  label: maybe
+  why: fits the CV's Python/SQL/Airflow work, but asks for fluent German and the CV has B2
+  split: tune
+- vacancy: intern-deployment-engineer-data-ai-munich-356741
+  cv: alex
+  label: maybe
+  why: data & AI internship, but in Munich
+  split: holdout
+- vacancy: intern-deployment-engineer-data-ai-munich-356741
+  cv: jonas
+  label: maybe
+  why: data & AI internship, but in Munich
+  split: tune
+- vacancy: ml-intern-optimization-quality-monitoring-zurich-167634
+  cv: alex
+  label: maybe
+  why: ML internship, but in Zürich
+  split: tune
+- vacancy: ml-intern-optimization-quality-monitoring-zurich-167634
+  cv: jonas
+  label: maybe
+  why: ML internship, but in Zürich
+  split: holdout
+- vacancy: synthetic-praktikum-computer-vision-hamburg
+  cv: alex
+  label: maybe
+  why: computer vision internship matching the X-ray project, but in Hamburg
+  split: holdout
+- vacancy: synthetic-praktikum-computer-vision-hamburg
+  cv: jonas
+  label: maybe
+  why: segmentation internship matching the thesis, but in Hamburg
+  split: holdout
+- vacancy: synthetic-junior-data-analyst-berlin
+  cv: alex
+  label: maybe
+  why: data role in Berlin, but a full-time junior position and Tableau is missing
+  split: tune
+- vacancy: synthetic-junior-data-analyst-berlin
+  cv: jonas
+  label: maybe
+  why: data role in Berlin, but a full-time junior position and Tableau is missing
+  split: tune
+- vacancy: synthetic-working-student-backend-go-berlin
+  cv: alex
+  label: maybe
+  why: working student in Berlin, but the core stack (Go, Kubernetes, AWS) is not used in the CV
+  split: tune
+- vacancy: synthetic-working-student-backend-go-berlin
+  cv: jonas
+  label: maybe
+  why: working student in Berlin, but the core stack (Go, Kubernetes, AWS) is not used in the CV
+  split: tune
+- vacancy: praktikum-anwendungsentwicklung-berlin-174622
+  cv: jonas
+  label: maybe
+  why: development internship in Berlin, German is fine, but the stack (JavaScript, PHP) is not in the CV
+  split: tune
+- vacancy: praktikum-anwendungsentwicklung-berlin-174622
+  cv: alex
+  label: bad
+  why: 'asks for very good German (CV has B2) and a JavaScript/PHP stack the CV lacks: two drawbacks'
+  split: tune
+- vacancy: werkstudent-data-science-offenbach-am-main-410864
+  cv: alex
+  label: bad
+  why: working student role in Offenbach, not remote; it runs alongside studies in Berlin
+  split: holdout
+- vacancy: werkstudent-data-science-offenbach-am-main-410864
+  cv: jonas
+  label: bad
+  why: working student role in Offenbach, not remote; it runs alongside studies in Berlin
+  split: tune
+- vacancy: intern-technology-consultant-data-ai-munich-355551
+  cv: alex
+  label: bad
+  why: a consulting internship rather than engineering, and in Munich
+  split: tune
+- vacancy: ai-engineer-tech-stagaire-rotterdam-484113
+  cv: alex
+  label: bad
+  why: requires Dutch
+  split: tune
+- vacancy: junior-ai-application-engineer-ai-products-llm-rag-munich-5253
+  cv: alex
+  label: bad
+  why: 'full-time junior role in Munich: two drawbacks'
+  split: tune
+- vacancy: junior-ai-application-engineer-ai-products-llm-rag-munich-5253
+  cv: jonas
+  label: bad
+  why: 'full-time junior role in Munich: two drawbacks'
+  split: tune
+- vacancy: machine-learning-engineer-berlin-325189
+  cv: alex
+  label: bad
+  why: 'asks the person to own production ML deployment: an experienced role'
+  split: holdout
+- vacancy: machine-learning-engineer-berlin-325189
+  cv: jonas
+  label: bad
+  why: 'asks the person to own production ML deployment: an experienced role'
+  split: tune
+- vacancy: software-developer-java-nodejs-web-development-team-berlin-munich-101048
+  cv: alex
+  label: bad
+  why: full-time Java/Node.js developer owning services end to end
+  split: tune
+- vacancy: ai-ml-engineer-germany-63592
+  cv: alex
+  label: bad
+  why: full-time AI/ML engineer building and running products, not a student role
+  split: tune
+- vacancy: ai-ml-engineer-germany-63592
+  cv: jonas
+  label: bad
+  why: full-time AI/ML engineer building and running products, not a student role
+  split: tune
+- vacancy: ai-application-engineer-ai-products-llm-rag-berlin-377089
+  cv: alex
+  label: bad
+  why: experienced AI application engineer
+  split: holdout
+- vacancy: senior-ai-engineer-document-intelligence-berlin-227489
+  cv: alex
+  label: bad
+  why: senior role
+  split: tune
+- vacancy: senior-machine-learning-engineer-london-170409
+  cv: alex
+  label: bad
+  why: senior role in London
+  split: holdout
+- vacancy: legal-counsel-it-data-protection-berlin-130040
+  cv: alex
+  label: bad
+  why: legal role, a different field
+  split: holdout
+- vacancy: legal-counsel-it-data-protection-berlin-130040
+  cv: jonas
+  label: bad
+  why: legal role, a different field
+  split: holdout
+- vacancy: junior-sales-manager-berlin-492508
+  cv: alex
+  label: bad
+  why: sales, a different field
+  split: holdout
+- vacancy: praktikum-digitales-marketing-social-media-berlin-498326
+  cv: alex
+  label: bad
+  why: marketing, a different field
+  split: tune
+- vacancy: working-student-it-asset-stock-management-berlin-berlin-203973
+  cv: alex
+  label: bad
+  why: IT asset management, a different field; asks for fluent German
+  split: holdout
+- vacancy: working-student-it-asset-stock-management-berlin-berlin-203973
+  cv: jonas
+  label: bad
+  why: IT asset management, a different field
+  split: holdout
+- vacancy: ki-weg-verwalter-berlin-255495
+  cv: alex
+  label: bad
+  why: property management; 'KI' in the title is the company's angle, not the job
+  split: holdout
+- vacancy: gtm-founders-associate-intern-vertical-ai-startup-berlin-55527
+  cv: alex
+  label: bad
+  why: a business (go-to-market) internship, a different field
+  split: tune
+- vacancy: software-engineer-java-berlin-377662
+  cv: alex
+  label: bad
+  why: full-time Java engineer, a different stack
+  split: tune
+- vacancy: stage-data-engineer-reporting-bi-f-h-mars-2027-pouzauges-468050
+  cv: alex
+  label: bad
+  why: internship in France, ad in French
+  split: tune
+- vacancy: data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939
+  cv: alex
+  label: bad
+  why: experienced data scientist role
+  split: tune
