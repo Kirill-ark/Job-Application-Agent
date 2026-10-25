@@ -89,3 +89,20 @@ I read the 6 remaining sentences myself:
 - 1 is a judge error: a sentence about PyTorch cites the thesis (p1), which
   uses PyTorch, but the judge only looked at the job (e1). The judge is
   useful, not infallible, so its verdicts are read by a person too.
+
+## Tool use and safety
+
+**First attempt (2026-10-25), cut short by a limit we did not know about.**
+Groq's free tier gives Qwen **200,000 tokens per day**. The response headers
+only show the per-minute limit; the daily one appears in the error once it
+is reached. A day of development runs plus the letter evals used it up, and
+3 of the 4 tool-use runs failed on it. The one that finished:
+
+- made up vacancy ids (`j1` to `j8`) twice before scoring the real ones, then
+  wrote 3 letters. The same pattern was seen on the page (`a1` to `b8`). It
+  is the agent's main weakness; the results now keep a short trace of every
+  run to find out whether it skips the search or scores in the same step as
+  it searches.
+
+What the daily limit means for the public demo: a run costs 10,000 to 23,000
+tokens, so the agent can serve roughly 10 to 15 runs a day in total, not 50.

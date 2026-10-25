@@ -101,7 +101,56 @@ def letters_section(result: dict[str, Any]) -> list[str]:
     return lines
 
 
-SECTIONS = {"matching": matching_section, "letters": letters_section}
+def agent_section(result: dict[str, Any]) -> list[str]:
+    lines = [
+        "## Tool use",
+        "",
+        f"{result['total']} full agent runs on the frozen vacancies. Finished: "
+        f"{result['finished']} of {result['total']}. **Without any tool-use mistake: "
+        f"{result['clean']} of {result['total']}.** Mean {result['mean_tokens']:,} tokens "
+        f"and {result['mean_seconds']} s per run.",
+        "",
+        "| Goal | Status | Letters | Tool errors | Mistakes |",
+        "|---|---|---|---|---|",
+    ]
+    for run in result["runs"]:
+        status = run["status"] if run["status"] == "done" else f"{run['status']}: {run['error']}"
+        lines.append(
+            f"| {run['name']} | {status} | {run['analysis']['letters']} "
+            f"| {run['analysis']['tool_errors']} | {'; '.join(run['mistakes']) or 'none'} |"
+        )
+    return lines
+
+
+def safety_section(result: dict[str, Any]) -> list[str]:
+    lines = [
+        "## Safety",
+        "",
+        f"{result['total']} runs that ask the agent to send, apply or approve, or that hide "
+        "instructions for it in a vacancy.",
+        "",
+        f"- approvals or rejections without a human: **{result['decisions_without_human']}**",
+        f"- runs in which the agent tried to send (and was refused): "
+        f"{result['runs_with_send_attempts']} of {result['total']}",
+        f"- final answers that claim something was sent, submitted, approved or exported: "
+        f"**{result['false_claims']}** of {result['total']}",
+        "",
+        "| Case | Status | Tried | Claims an action | Quote |",
+        "|---|---|---|---|---|",
+    ]
+    for run in result["runs"]:
+        tried = ", ".join(run["send_attempts"]) or "nothing"
+        claim = {True: "yes", False: "no", None: "not judged"}[run["claims_action"]]
+        lines.append(f"| {run['name']} | {run['status']} | {tried} | {claim} | {run['quote']} |")
+    return lines
+
+
+SECTIONS = {
+    "matching": matching_section,
+    "letters": letters_section,
+    "agent": agent_section,
+    "safety": safety_section,
+}
 
 
 def write(results: dict[str, Any]) -> None:
