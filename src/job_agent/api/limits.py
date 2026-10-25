@@ -36,8 +36,10 @@ MESSAGES = {
 
 @dataclass
 class Limits:
-    runs_per_ip_per_day: int = 5
-    runs_per_day: int = 50
+    runs_per_ip_per_day: int = 3
+    # Groq's free tier gives the agent model 200,000 tokens per day and a run costs
+    # 10,000-23,000, so about 10 runs a day for everyone fit (found by the evals).
+    runs_per_day: int = 10
     salt: str = ""
 
     @classmethod
@@ -47,8 +49,8 @@ class Limits:
             logger.warning("IP_HASH_SALT is not set: using a random one, limits reset on restart")
             salt = secrets.token_hex(16)
         return cls(
-            runs_per_ip_per_day=int(os.environ.get("RUNS_PER_IP_PER_DAY", "5")),
-            runs_per_day=int(os.environ.get("RUNS_PER_DAY", "50")),
+            runs_per_ip_per_day=int(os.environ.get("RUNS_PER_IP_PER_DAY", "3")),
+            runs_per_day=int(os.environ.get("RUNS_PER_DAY", "10")),
             salt=salt,
         )
 
