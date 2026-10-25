@@ -108,7 +108,7 @@ button.link { background: none; color: var(--accent); padding: 4px; }
 .icon.failed { color: var(--bad); }
 .icon.spin {
   border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.8s linear infinite; /* SPIN_MS in app.js */
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .icon.spin { animation: none; } }

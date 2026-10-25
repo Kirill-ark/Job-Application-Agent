@@ -222,9 +222,20 @@ function groupTitle(group) {
   return parts.join(" + ") + (errors ? ` · ${plural(errors, "error")}` : "");
 }
 
+const SPIN_MS = 800; // one turn of the spinner, as in style.css
+
+// state: "spin", "ok" or "failed". The panel is redrawn every second, and a new
+// spinner would start its turn again and jump; a negative delay taken from the
+// clock makes every spinner continue at the same angle.
+function setIcon(node, state) {
+  node.className = `icon ${state}`;
+  node.textContent = state === "ok" ? "✓" : state === "failed" ? "✕" : "";
+  node.style.animationDelay = state === "spin" ? `-${Date.now() % SPIN_MS}ms` : "";
+  return node;
+}
+
 function icon(state) {
-  // state: "spin", "ok" or "failed"
-  return el("span", { class: `icon ${state}`, text: state === "ok" ? "✓" : state === "failed" ? "✕" : "" });
+  return setIcon(el("span"), state);
 }
 
 function showTrace(run) {
@@ -240,7 +251,8 @@ function showTrace(run) {
   else if (!last.llm.tool_calls.length) text = "Writing the summary…";
   else if (!last.done) text = groupTitle(last);
   else text = "Deciding the next step…";
-  $("now-icon").replaceWith(Object.assign(icon(running ? "spin" : run.status === "done" ? "ok" : "failed"), { id: "now-icon" }));
+  const nowState = running ? "spin" : run.status === "done" ? "ok" : "failed";
+  if (!$("now-icon").classList.contains(nowState)) setIcon($("now-icon"), nowState); // keep it spinning
   $("now-text").textContent = text;
   // A live run counts from its start, also while it waits for the LLM; the demo
   // replay has no real clock, so it adds up the steps.
