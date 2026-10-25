@@ -64,6 +64,28 @@ Also found: Groq allows Qwen only 1,000 output tokens per minute and refuses
 requests whose max_tokens could exceed it, so the judge first failed on 5 of
 8 letters. It now asks for short reasons with max_tokens 900.
 
-**Fixes (not yet re-measured):**
+**Fixes:**
 1. The writer's prompt forbids judging words and asks for CV language levels.
 2. The rules cut a named vacancy title out of a sentence before checking it.
+
+**After the fixes** (8 new letters, 67 sentences):
+
+| | first run | after fixes |
+|---|---|---|
+| Not backed by the CV (partly + unsupported) | 16% | 9% |
+| Letters without any problem | 2 of 8 | 4 of 8 |
+| False alarms of the rules | 1 | 0 |
+
+I read the 6 remaining sentences myself:
+
+- 4 are mild interpretations rather than facts ("deployment pipelines" for one
+  Docker container, "production workflow", "demonstrating practical ML").
+- 1 is a real gap in the rules: "My current studies in Computer Science at TU
+  Berlin align with the role" is a claim the model marked as "other", so it
+  cites nothing. It is true (fact ed1), but it skips the citation. The rules
+  only catch such hidden claims when they contain a skill or a number.
+  Fix later: an "other" sentence that names a CV employer, school or project
+  is a claim.
+- 1 is a judge error: a sentence about PyTorch cites the thesis (p1), which
+  uses PyTorch, but the judge only looked at the job (e1). The judge is
+  useful, not infallible, so its verdicts are read by a person too.
