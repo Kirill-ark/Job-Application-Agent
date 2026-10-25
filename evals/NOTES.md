@@ -50,3 +50,20 @@ generalize rather than memorize the tune pairs.
 - Two "good" pairs for the second CV score 64, one point under the threshold.
 - Roles whose stack the CV lacks (JavaScript/PHP, Tableau) score "bad"
   where the rubric says "maybe". Arguably both answers are defensible.
+
+## Cover letter groundedness
+
+**First full run** (8 letters, 61 sentences, judge: Qwen 3.8 27B):
+0 sentences unsupported, 10 (16%) "partly": embellishments the CV does not
+back ("robust pipelines", "production-grade models", "strong competence",
+"fluent" for C1), and one skill credited to the job instead of a project.
+The rules caught none of them: they check skills and numbers, not wording.
+The rules had one false alarm: a skill that was part of the vacancy title.
+
+Also found: Groq allows Qwen only 1,000 output tokens per minute and refuses
+requests whose max_tokens could exceed it, so the judge first failed on 5 of
+8 letters. It now asks for short reasons with max_tokens 900.
+
+**Fixes (not yet re-measured):**
+1. The writer's prompt forbids judging words and asks for CV language levels.
+2. The rules cut a named vacancy title out of a sentence before checking it.

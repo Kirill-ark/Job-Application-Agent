@@ -966,5 +966,929 @@
    }
   ],
   "ran_at": "2026-10-25T20:43:31+00:00"
+ },
+ "letters": {
+  "letters": 8,
+  "judge_failed": [],
+  "sentences": 61,
+  "claims": 35,
+  "verdicts": {
+   "supported": 51,
+   "wrong_citation": 0,
+   "partly": 10,
+   "unsupported": 0
+  },
+  "hallucination_rate": 0.16393442622950818,
+  "letters_without_hallucination": 2,
+  "rules": {
+   "flagged": 1,
+   "caught": 0,
+   "false_alarms": [
+    {
+     "case": "Working Student NLP / Machine Learning (jonas)",
+     "text": "I am excited to apply for the Working Student NLP / Machine Learning position because it aligns with my hands‑on experience in Python, PyTorch, Docker and FastAPI.",
+     "kind": "claim",
+     "cites": [
+      "e1",
+      "p1",
+      "p2"
+     ],
+     "rule_problems": [
+      "mentions skills the cited facts do not show: NLP"
+     ],
+     "verdict": "supported",
+     "reason": "All four technologies confirmed by cited facts."
+    }
+   ],
+   "missed": [
+    {
+     "case": "Internship - Machine Learning Research Engine (jonas)",
+     "text": "I also built robust data pipelines with Airflow and PostgreSQL.",
+     "kind": "claim",
+     "cites": [
+      "e1.f2"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "'Robust' is an adjective not in the CV."
+    },
+    {
+     "case": "Working Student — AI Engineering & Document I (alex)",
+     "text": "I am excited to apply for the Working Student – AI Engineering & Document Intelligence role because it aligns perfectly with my focus on machine learning and backend development.",
+     "kind": "claim",
+     "cites": [
+      "p1",
+      "p3"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "Backend development not shown by p1 or p3."
+    },
+    {
+     "case": "Working Student — AI Engineering & Document I (alex)",
+     "text": "My current studies in Computer Science and hands‑on Python development equip me to contribute to document parsing and AI model prototyping.",
+     "kind": "claim",
+     "cites": [
+      "p1",
+      "p3"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "Backend development not supported by cited facts."
+    },
+    {
+     "case": "Working Student — AI Engineering & Document I (jonas)",
+     "text": "I am fluent in English and German and can work up to 20 hours per week, fitting the part‑time requirements of the role.",
+     "kind": "claim",
+     "cites": [
+      "lang2",
+      "lang1",
+      "av"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "C1 is not 'fluent'; overstates English level."
+    },
+    {
+     "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+     "text": "My current role as a Working Student in Machine Learning at Muster Logistics GmbH has given me hands‑on experience developing production‑grade models and data pipelines.",
+     "kind": "claim",
+     "cites": [
+      "e1.f1",
+      "e1.f2"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "\"Production-grade\" overstates; CV doesn't claim production deployment."
+    },
+    {
+     "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+     "text": "I built a delivery time forecasting model with Python and XGBoost, improving prediction accuracy, and I constructed robust Airflow pipelines that integrate with PostgreSQL databases.",
+     "kind": "claim",
+     "cites": [
+      "e1.f1",
+      "e1.f2"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "\"Robust\" is an adjective not supported by any CV fact."
+    },
+    {
+     "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+     "text": "I also developed a Retrieval‑Augmented Generation chatbot for study regulations, containerised it with Docker, and deployed the service for continuous use.",
+     "kind": "claim",
+     "cites": [
+      "p2",
+      "p2.f1"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "\"For continuous use\" overstates; CV only says deployed in Docker."
+    },
+    {
+     "case": "Working Student NLP / Machine Learning (alex)",
+     "text": "In my current role I automated a weekly sales report, gaining practical experience with Python scripting and Dockerized services.",
+     "kind": "claim",
+     "cites": [
+      "e1.f2"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "Dockerized services not in e1; Docker is from projects, not this role."
+    },
+    {
+     "case": "Working Student NLP / Machine Learning (jonas)",
+     "text": "During my working‑student role at Muster Logistics GmbH I developed a delivery‑time forecasting model with Python and XGBoost, reducing error by 18 % and built robust data pipelines with Airflow and PostgreSQL.",
+     "kind": "claim",
+     "cites": [
+      "e1.f1",
+      "e1.f2"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "\"Robust\" is an adjective not supported by CV."
+    },
+    {
+     "case": "Working Student NLP / Machine Learning (jonas)",
+     "text": "In my bachelor thesis I implemented an image‑segmentation model using PyTorch (U‑Net) that achieved a 0.74 IoU on the test set, demonstrating strong competence with deep‑learning frameworks.",
+     "kind": "claim",
+     "cites": [
+      "p1.f1"
+     ],
+     "rule_problems": [],
+     "verdict": "partly",
+     "reason": "\"Strong competence\" overstates what the fact shows."
+    }
+   ]
+  },
+  "judged_bad": [
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "I also built robust data pipelines with Airflow and PostgreSQL.",
+    "kind": "claim",
+    "cites": [
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "'Robust' is an adjective not in the CV."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "I am excited to apply for the Working Student – AI Engineering & Document Intelligence role because it aligns perfectly with my focus on machine learning and backend development.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p3"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "Backend development not shown by p1 or p3."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "My current studies in Computer Science and hands‑on Python development equip me to contribute to document parsing and AI model prototyping.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p3"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "Backend development not supported by cited facts."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "I am fluent in English and German and can work up to 20 hours per week, fitting the part‑time requirements of the role.",
+    "kind": "claim",
+    "cites": [
+     "lang2",
+     "lang1",
+     "av"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "C1 is not 'fluent'; overstates English level."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "My current role as a Working Student in Machine Learning at Muster Logistics GmbH has given me hands‑on experience developing production‑grade models and data pipelines.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Production-grade\" overstates; CV doesn't claim production deployment."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "I built a delivery time forecasting model with Python and XGBoost, improving prediction accuracy, and I constructed robust Airflow pipelines that integrate with PostgreSQL databases.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Robust\" is an adjective not supported by any CV fact."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "I also developed a Retrieval‑Augmented Generation chatbot for study regulations, containerised it with Docker, and deployed the service for continuous use.",
+    "kind": "claim",
+    "cites": [
+     "p2",
+     "p2.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"For continuous use\" overstates; CV only says deployed in Docker."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (alex)",
+    "text": "In my current role I automated a weekly sales report, gaining practical experience with Python scripting and Dockerized services.",
+    "kind": "claim",
+    "cites": [
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "Dockerized services not in e1; Docker is from projects, not this role."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "During my working‑student role at Muster Logistics GmbH I developed a delivery‑time forecasting model with Python and XGBoost, reducing error by 18 % and built robust data pipelines with Airflow and PostgreSQL.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Robust\" is an adjective not supported by CV."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "In my bachelor thesis I implemented an image‑segmentation model using PyTorch (U‑Net) that achieved a 0.74 IoU on the test set, demonstrating strong competence with deep‑learning frameworks.",
+    "kind": "claim",
+    "cites": [
+     "p1.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Strong competence\" overstates what the fact shows."
+   }
+  ],
+  "rows": [
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "Dear Perplexity team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about applicant."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "I am very interested in the Machine Learning Research Engineer internship in Berlin.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Expresses interest in the position, no applicant claim."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "My background in computer science includes developing deep learning models with PyTorch and building Retrieval‑Augmented Generation pipelines, which matches the core focus of the role.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p3"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "PyTorch model (p1) and RAG pipeline (p3) both confirmed."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "I have also worked as a data‑focused working student, creating Python ETL scripts and automating reporting, showing my ability to handle data pipelines that support model training.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "ETL scripts and automated reporting match e1.f1 and e1.f2."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "In the Pneumonia X‑Ray Classifier project I fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images and reached 0.93 recall on the held‑out test set, demonstrating strong model training and evaluation skills.",
+    "kind": "claim",
+    "cites": [
+     "p1.f1",
+     "p1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "ResNet18, 5,800 images, 0.93 recall all match cited facts."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "Additionally, I built a RAG application that compared two embedding models on answer quality and memory use, giving me practical experience with retrieval‑augmented generation pipelines.",
+    "kind": "claim",
+    "cites": [
+     "p3.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Comparing two embedding models on quality and memory matches p3.f2."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "Thank you for considering my application. I look forward to contributing to Perplexity’s search research.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing, no claim about applicant."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (alex)",
+    "text": "Sincerely, Alex Example",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Signature, no claim about applicant."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "Dear Perplexity team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about applicant."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "I am excited to apply for the Machine Learning Research Engineer internship because it focuses on deep learning models with PyTorch and building RAG pipelines.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Statement about position and interest, no applicant claim."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "During my working‑student role at Muster Logistics GmbH I developed a delivery‑time forecasting model with Python and XGBoost, reducing the error by 18 %.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Matches e1.f1 exactly."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "I also built robust data pipelines with Airflow and PostgreSQL.",
+    "kind": "claim",
+    "cites": [
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "'Robust' is an adjective not in the CV."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "In addition, I deployed a study‑regulations chatbot in Docker, demonstrating practical experience with RAG systems.",
+    "kind": "claim",
+    "cites": [
+     "p2.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Matches p2.f1; RAG from p2 tech."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "I look forward to contributing to Perplexity’s search‑quality research and gaining further expertise in representation learning.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Forward-looking statement, no applicant claim."
+   },
+   {
+    "case": "Internship - Machine Learning Research Engine (jonas)",
+    "text": "Sincerely, Jonas Beispiel",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing, no claim about applicant."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "Dear Tracium Team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about the applicant."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "I am excited to apply for the Working Student – AI Engineering & Document Intelligence role because it aligns perfectly with my focus on machine learning and backend development.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p3"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "Backend development not shown by p1 or p3."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "My current studies in Computer Science and hands‑on Python development equip me to contribute to document parsing and AI model prototyping.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p3"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "Backend development not supported by cited facts."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "In my recent projects I fine‑tuned a ResNet model for medical image classification using Python and built a Retrieval‑Augmented Generation application that integrates LLMs to answer questions from PDFs.",
+    "kind": "claim",
+    "cites": [
+     "p1.f1",
+     "p3"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All claims follow directly from cited facts."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "As a Working Student at Example Retail GmbH I built Python ETL scripts that load weekly sales data into PostgreSQL and automated the weekly sales report.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All claims follow directly from cited facts."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "Thank you for considering my application. I look forward to the possibility of contributing to Tracium’s document intelligence solutions.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing, no claim about the applicant."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (alex)",
+    "text": "Sincerely, Alex Example",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Signature, no claim about the applicant."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "Dear Tracium GmbH hiring team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about applicant."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "I am excited to apply for the Working Student — AI Engineering & Document Intelligence position in Berlin.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Names position and expresses interest, no applicant claim."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "My current role as a Working Student in Machine Learning at Muster Logistics GmbH has given me hands‑on experience developing Python‑based models, including a delivery time forecasting model that reduced error by 18 %.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All details match e1 and e1.f1 exactly."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "I also deployed a RAG chatbot for study regulations using Docker, which demonstrates my ability to build and ship AI prototypes in a containerised environment.",
+    "kind": "claim",
+    "cites": [
+     "p2",
+     "p2.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All details match p2 and p2.f1 exactly."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "In my bachelor thesis I implemented an image segmentation model with PyTorch that achieved a 0.74 IoU on the test set, showing solid experience with computer‑vision and deep‑learning frameworks.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p1.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All details match p1 and p1.f1 exactly."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "Additionally, I built data pipelines with Airflow and PostgreSQL, reinforcing my skills in data handling and workflow automation.",
+    "kind": "claim",
+    "cites": [
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All details match e1.f2 exactly."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "I am fluent in English and German and can work up to 20 hours per week, fitting the part‑time requirements of the role.",
+    "kind": "claim",
+    "cites": [
+     "lang2",
+     "lang1",
+     "av"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "C1 is not 'fluent'; overstates English level."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "Thank you for considering my application.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing, no claim about applicant."
+   },
+   {
+    "case": "Working Student — AI Engineering & Document I (jonas)",
+    "text": "Sincerely, Jonas Beispiel",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Signature, no claim about applicant."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "Dear Limetax hiring team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about applicant."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "I am excited to apply for the Member of Technical Staff Intern position because it offers the chance to work on applied AI systems that directly impact real‑world workflows.",
+    "kind": "claim",
+    "cites": [
+     "p3"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Expression of interest in the role, no applicant claim."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "My background includes developing a Retrieval‑Augmented Generation app that leverages large language models to answer questions from PDF documents, demonstrating my ability to build AI‑native solutions.",
+    "kind": "claim",
+    "cites": [
+     "p3.f1",
+     "p3.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Core RAG/LLM/PDF claim matches p3; characterization is fair."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "I am also comfortable communicating in German at a B2 level, which will help me collaborate effectively with the Berlin‑based team.",
+    "kind": "claim",
+    "cites": [
+     "lang2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "German B2 directly matches lang2."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "During my recent working‑student role at Example Retail GmbH, I built Python ETL scripts that load weekly sales data into PostgreSQL and automated a weekly sales report, showing my experience with end‑to‑end data pipelines.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "ETL scripts and automated report match e1.f1 and e1.f2."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "I also created a FastAPI service containerised with Docker to serve an NLP ticket‑routing model, illustrating my ability to deliver production‑ready APIs.",
+    "kind": "claim",
+    "cites": [
+     "p2.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "FastAPI + Docker + NLP routing matches p2.f2."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "In a computer‑vision project, I fine‑tuned a ResNet18 on 5,800 chest X‑ray images and achieved a recall of 0.93 on the held‑out test set, reflecting strong model‑building skills.",
+    "kind": "claim",
+    "cites": [
+     "p1.f1",
+     "p1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "ResNet18, 5,800 images, 0.93 recall all match p1.f1 and p1.f2."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "Thank you for considering my application. I look forward to the possibility of contributing to Limetax’s innovative platform.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing statement, no claim about applicant."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (alex)",
+    "text": "Sincerely, Alex Example",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Signature, no claim about applicant."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "Dear Limetax Team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about applicant."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "I am excited to apply for the Member of Technical Staff Intern position because I am eager to contribute to innovative AI‑native solutions for accounting and tax workflows.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Expression of interest, no factual claim about applicant."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "My current role as a Working Student in Machine Learning at Muster Logistics GmbH has given me hands‑on experience developing production‑grade models and data pipelines.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Production-grade\" overstates; CV doesn't claim production deployment."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "I built a delivery time forecasting model with Python and XGBoost, improving prediction accuracy, and I constructed robust Airflow pipelines that integrate with PostgreSQL databases.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Robust\" is an adjective not supported by any CV fact."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "In my academic projects I have applied deep learning to real‑world data, such as creating a U‑Net based image segmentation model for satellite imagery using PyTorch, achieving a 0.74 IoU on the test set.",
+    "kind": "claim",
+    "cites": [
+     "p1",
+     "p1.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All details match p1 and p1.f1 exactly."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "I also developed a Retrieval‑Augmented Generation chatbot for study regulations, containerised it with Docker, and deployed the service for continuous use.",
+    "kind": "claim",
+    "cites": [
+     "p2",
+     "p2.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"For continuous use\" overstates; CV only says deployed in Docker."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "I look forward to bringing my machine‑learning and software‑engineering background to Limetax and learning from your experienced team.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing statement, no specific factual claim about applicant."
+   },
+   {
+    "case": "Member of Technical Staff (MTS) Intern (m/f/d (jonas)",
+    "text": "Sincerely, Jonas Beispiel",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Signature, no claim about applicant."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (alex)",
+    "text": "Dear Example Health AI team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about applicant."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (alex)",
+    "text": "I am eager to join your applied ML team as a working student because I have built an NLP ticket‑routing classifier in Python using TF‑IDF and logistic regression, and deployed it with FastAPI in Docker.",
+    "kind": "claim",
+    "cites": [
+     "p2.f1",
+     "p2.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All claims match cited facts p2.f1 and p2.f2."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (alex)",
+    "text": "In my current role I automated a weekly sales report, gaining practical experience with Python scripting and Dockerized services.",
+    "kind": "claim",
+    "cites": [
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "Dockerized services not in e1; Docker is from projects, not this role."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (alex)",
+    "text": "Additionally, I fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images and reached 0.93 recall on the held‑out test set, showcasing strong machine‑learning capabilities.",
+    "kind": "claim",
+    "cites": [
+     "p1.f1",
+     "p1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All claims match cited facts p1.f1 and p1.f2."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (alex)",
+    "text": "Thank you for considering my application. I look forward to contributing to Example Health AI. Sincerely, Alex Example",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing, no claim about applicant."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "Dear Example Health AI team,",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Greeting, no claim about applicant."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "I am excited to apply for the Working Student NLP / Machine Learning position because it aligns with my hands‑on experience in Python, PyTorch, Docker and FastAPI.",
+    "kind": "claim",
+    "cites": [
+     "e1",
+     "p1",
+     "p2"
+    ],
+    "rule_problems": [
+     "mentions skills the cited facts do not show: NLP"
+    ],
+    "verdict": "supported",
+    "reason": "All four technologies confirmed by cited facts."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "My current studies in Computer Science at TU Berlin also match the requirement of being enrolled at a university and speaking English at a high level.",
+    "kind": "claim",
+    "cites": [
+     "ed1",
+     "lang2"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All claims directly follow from cited facts."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "During my working‑student role at Muster Logistics GmbH I developed a delivery‑time forecasting model with Python and XGBoost, reducing error by 18 % and built robust data pipelines with Airflow and PostgreSQL.",
+    "kind": "claim",
+    "cites": [
+     "e1.f1",
+     "e1.f2"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Robust\" is an adjective not supported by CV."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "In my bachelor thesis I implemented an image‑segmentation model using PyTorch (U‑Net) that achieved a 0.74 IoU on the test set, demonstrating strong competence with deep‑learning frameworks.",
+    "kind": "claim",
+    "cites": [
+     "p1.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "partly",
+    "reason": "\"Strong competence\" overstates what the fact shows."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "Additionally, I created a study‑regulations chatbot with RAG, LangChain, FastAPI and Docker, and successfully deployed it in a Docker container.",
+    "kind": "claim",
+    "cites": [
+     "p2.f1"
+    ],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "All details match cited facts exactly."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "I look forward to contributing to your applied ML team and am available to work as a working student.",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Closing/availability statement, no unsupported claim."
+   },
+   {
+    "case": "Working Student NLP / Machine Learning (jonas)",
+    "text": "Sincerely, Jonas Beispiel",
+    "kind": "other",
+    "cites": [],
+    "rule_problems": [],
+    "verdict": "supported",
+    "reason": "Signature, no claim about applicant."
+   }
+  ],
+  "ran_at": "2026-10-25T21:02:55+00:00"
  }
 }

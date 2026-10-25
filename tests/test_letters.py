@@ -208,6 +208,29 @@ def test_other_sentence_may_name_the_position(cv: dict[str, Any], taxonomy: Taxo
     assert problems(cv, taxonomy, other(f"I am applying for the {TITLE} role.")) == []
 
 
+def test_claim_may_name_the_position(cv: dict[str, Any], taxonomy: Taxonomy) -> None:
+    # The job (e1) does not show Machine Learning, but the sentence only names the
+    # position. The ad writes a long dash, the letter a short one.
+    title = "Working Student — Machine Learning"
+    sentence = Sentence(
+        **claim("The Working Student – Machine Learning role fits my ETL work.", "e1.f1")
+    )
+    assert check_sentence(sentence, cv, taxonomy, title) == []
+    # Without the title cut out, the same sentence would be flagged:
+    assert check_sentence(sentence, cv, taxonomy, "Another title") == [
+        "mentions skills the cited facts do not show: Machine Learning"
+    ]
+
+
+def test_title_skill_said_outside_the_title_is_still_checked(
+    cv: dict[str, Any], taxonomy: Taxonomy
+) -> None:
+    sentence = claim("I built ETL scripts and did machine learning.", "e1.f1")
+    assert problems(cv, taxonomy, sentence) == [
+        "mentions skills the cited facts do not show: Machine Learning"
+    ]
+
+
 def test_other_sentence_cannot_hide_a_claim(cv: dict[str, Any], taxonomy: Taxonomy) -> None:
     sentence = other("I have 3 years of Django experience.")
     assert problems(cv, taxonomy, sentence) == [

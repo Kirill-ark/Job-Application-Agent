@@ -1,0 +1,10 @@
+# Vacancy-CV pairs a letter is written for in the letters suite: the pairs
+# labeled "good", where an applicant would really write a letter.
+- {vacancy: internship-machine-learning-research-engineer-berlin-168024, cv: alex}
+- {vacancy: internship-machine-learning-research-engineer-berlin-168024, cv: jonas}
+- {vacancy: working-student-ai-engineering-document-intelligence-berlin-378393, cv: alex}
+- {vacancy: working-student-ai-engineering-document-intelligence-berlin-378393, cv: jonas}
+- {vacancy: member-of-technical-staff-mts-intern-berlin-253567, cv: alex}
+- {vacancy: member-of-technical-staff-mts-intern-berlin-253567, cv: jonas}
+- {vacancy: synthetic-working-student-nlp-berlin, cv: alex}
+- {vacancy: synthetic-working-student-nlp-berlin, cv: jonas}

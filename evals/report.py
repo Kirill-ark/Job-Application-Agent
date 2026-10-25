@@ -50,7 +50,58 @@ def matching_section(result: dict[str, Any]) -> list[str]:
     return lines
 
 
-SECTIONS = {"matching": matching_section}
+def letters_section(result: dict[str, Any]) -> list[str]:
+    verdicts, rules = result["verdicts"], result["rules"]
+    total = result["sentences"]
+    lines = [
+        "## Cover letter groundedness",
+        "",
+        f"{result['letters']} letters, {total} sentences ({result['claims']} claims about the "
+        "applicant). Each sentence was checked by the rules and by an LLM judge of another "
+        "model family than the writer.",
+        "",
+        "| | sentences | share |",
+        "|---|---|---|",
+    ]
+    for verdict in ("supported", "wrong_citation", "partly", "unsupported"):
+        share = verdicts[verdict] / total if total else None
+        lines.append(
+            f"| Judge: {verdict.replace('_', ' ')} | {verdicts[verdict]} | {percent(share)} |"
+        )
+    lines += [
+        "",
+        f"**Hallucination rate: {percent(result['hallucination_rate'])} of sentences** "
+        "(judged partly or unsupported). "
+        f"Letters without any: {result['letters_without_hallucination']} of {result['letters']}.",
+        "",
+        "Rules compared with the judge:",
+        "",
+        f"- flagged by the rules: {rules['flagged']}, of which the judge also found a problem "
+        f"in {rules['caught']}",
+        f"- false alarms (rules flagged, judge says supported): {len(rules['false_alarms'])}",
+        f"- missed by the rules (judge found a problem): {len(rules['missed'])}",
+    ]
+    if result["judge_failed"]:
+        lines += [
+            "",
+            f"Not judged ({len(result['judge_failed'])}): " + "; ".join(result["judge_failed"]),
+        ]
+
+    def table(title: str, rows: list[dict[str, Any]], note: str) -> list[str]:
+        if not rows:
+            return []
+        out = ["", f"### {title}", "", "| Letter | Sentence | " + note + " |", "|---|---|---|"]
+        for row in rows:
+            detail = row["reason"] if note == "Judge" else "; ".join(row["rule_problems"])
+            out.append(f"| {row['case']} | {row['text']} | {detail} |".replace("\n", " "))
+        return out
+
+    lines += table("Sentences the judge found not backed by the CV", result["judged_bad"], "Judge")
+    lines += table("False alarms of the rules", rules["false_alarms"], "Rules")
+    return lines
+
+
+SECTIONS = {"matching": matching_section, "letters": letters_section}
 
 
 def write(results: dict[str, Any]) -> None:
