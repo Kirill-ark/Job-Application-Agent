@@ -71,12 +71,14 @@ class ScriptedLLM:
     def __init__(self, *replies: ChatReply | Exception) -> None:
         self.replies = list(replies)
         self.requests: list[list[dict[str, Any]]] = []
+        self.offered: list[set[str]] = []  # the tool names of every request
 
     async def __call__(
         self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
     ) -> ChatReply:
         self.requests.append([dict(m) for m in messages])
         self.tools = tools
+        self.offered.append({t["function"]["name"] for t in tools})
         reply = self.replies.pop(0) if len(self.replies) > 1 else self.replies[0]
         if isinstance(reply, Exception):
             raise reply
@@ -159,14 +161,32 @@ async def test_letter_limit(server: MCPServer, conn: sqlite3.Connection) -> None
 
 async def test_tool_error_goes_back_to_the_llm(server: MCPServer, conn: sqlite3.Connection) -> None:
     llm = ScriptedLLM(
-        calls(("score_match", {"job_id": "made-up-id"})),
         calls(SEARCH),
+        calls(("score_match", {"job_id": "made-up-id"})),
         final("Done"),
     )
     summary = await run(server, conn, llm)
     assert summary["status"] == "done"
-    error = [m for m in llm.requests[1] if m["role"] == "tool"][0]["content"]
+    error = [m for m in llm.requests[2] if m["role"] == "tool"][1]["content"]
     assert error.startswith("ERROR: Error executing tool score_match: Unknown vacancy")
+
+
+async def test_id_tools_are_offered_only_after_a_search(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    # Seen in the evals: the model skipped the search and scored made-up ids j1..j8.
+    llm = ScriptedLLM(
+        calls(("read_cv", {})),
+        calls(("score_match", {"job_id": "j1"})),  # called anyway, not offered
+        calls(SEARCH),
+        final("Done"),
+    )
+    await run(server, conn, llm)
+    assert "score_match" not in llm.offered[0] | llm.offered[1] | llm.offered[2]
+    assert {"read_cv", "search_jobs", "request_approval"} <= llm.offered[0]
+    assert {"score_match", "draft_cover_letter"} <= llm.offered[3]
+    error = [m for m in llm.requests[2] if m["role"] == "tool"][1]["content"]
+    assert error == "ERROR: Call search_jobs first: vacancy ids come only from its results"
 
 
 async def test_unknown_tool_and_bad_arguments(server: MCPServer, conn: sqlite3.Connection) -> None:

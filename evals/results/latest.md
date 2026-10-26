@@ -69,3 +69,16 @@ Rules compared with the judge:
 | Member of Technical Staff (MTS) Intern (m/f/d (jonas) | In the same role I created data pipelines with Airflow and PostgreSQL to support the model’s production workflow. | Adds 'production workflow' not stated in e1.f2. |
 
 _Ran at 2026-10-25T21:14:04+00:00._
+
+## Tool use
+
+4 full agent runs on the frozen vacancies. Finished: 3 of 4. **Without any tool-use mistake: 3 of 4.** Mean 11,762 tokens and 79 s per run.
+
+| Goal | Status | Letters | Tool errors | Mistakes |
+|---|---|---|---|---|
+| default goal | done | 3 | 0 | none |
+| at most two letters | failed: Stopped after 3 steps in a row in which every tool call failed | 0 | 24 | made-up ids: j1, j2, j3, j4, j5, j6, j7, j8; 16 repeated scores |
+| no letters | done | 0 | 0 | none |
+| goal in German | done | 3 | 0 | none |
+
+_Ran at 2026-10-26T12:23:47+00:00._

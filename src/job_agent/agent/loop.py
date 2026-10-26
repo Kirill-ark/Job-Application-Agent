@@ -15,7 +15,8 @@ The full results stay in the trace.
 
 Limits are enforced here in code, not only asked for in the prompt:
 MAX_STEPS LLM calls, MAX_LETTERS letters, MAX_FAILED_STEPS steps in a row in which
-every tool call failed.
+every tool call failed. The same goes for the order of the work: the tools that
+take a vacancy id are offered only after a search has returned some ids.
 """
 
 import json
@@ -36,6 +37,10 @@ MAX_LETTERS = 3
 # Counted per step, not per call: one step with 16 made-up ids is one mistake the
 # model can correct after reading the errors, not 16 (found in a live run).
 MAX_FAILED_STEPS = 3
+# Tools that need a vacancy id. Before the first search the model is not shown
+# them: asked nicely in the prompt, it still skipped the search and scored
+# made-up ids like j1..j8 (found by the evals).
+NEED_SEARCH = {"score_match", "draft_cover_letter"}
 
 # What stays of a tool result in the conversation after the model has seen it.
 SHORT_FIELDS = {
@@ -91,6 +96,11 @@ def mcp_tools_for_llm(tools: list[Any]) -> list[dict[str, Any]]:
     ]
 
 
+def before_search(llm_tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The tools to offer while no search has returned vacancy ids yet."""
+    return [t for t in llm_tools if t["function"]["name"] not in NEED_SEARCH]
+
+
 def shorten(tool: str, result: dict[str, Any]) -> str:
     """The short version of a tool result, for requests after the first one."""
     fields = SHORT_FIELDS.get(tool)
@@ -131,6 +141,7 @@ class Run:
         self.on_step = on_step
         self.trace: list[dict[str, Any]] = []
         self.letters = 0
+        self.searched = False  # a search_jobs call has succeeded
         self.failed_steps = 0  # steps in a row in which every call failed
 
     def record(self, step: dict[str, Any]) -> None:
@@ -156,6 +167,8 @@ async def call_tool(client: Client, run: Run, names: set[str], call: ToolCall) -
         error = f"Unknown tool '{call.name}'. Use one of: {', '.join(sorted(names))}"
     elif not isinstance(arguments, dict):
         error = "The arguments are not a JSON object"
+    elif call.name in NEED_SEARCH and not run.searched:
+        error = "Call search_jobs first: vacancy ids come only from its results"
     elif call.name == "draft_cover_letter" and run.letters >= MAX_LETTERS:
         error = f"Letter limit reached: at most {MAX_LETTERS} letters per run"
     else:
@@ -169,6 +182,7 @@ async def call_tool(client: Client, run: Run, names: set[str], call: ToolCall) -
         run.record({**step, "ok": False, "error": error})
         return f"ERROR: {error}", f"ERROR: {error}"
     data = result.structured_content
+    run.searched = run.searched or call.name == "search_jobs"
     run.record({**step, "ok": True, "result": data})
     return to_json(data), shorten(call.name, data)
 
@@ -202,7 +216,8 @@ async def run_agent(
     for _ in range(MAX_STEPS):
         started = time.monotonic()
         try:
-            reply = await chat(messages, llm_tools)
+            offered = llm_tools if run.searched else before_search(llm_tools)
+            reply = await chat(messages, offered)
         except LLMError as llm_error:
             error = str(llm_error)
             break
