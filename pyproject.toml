@@ -4,8 +4,11 @@ version = "0.1.0"
 description = "Tool-using AI agent that finds AI/ML Werkstudent roles in Berlin, scores them against a CV and drafts grounded cover letters"
 readme = "README.md"
 authors = [
-    { name = "kirillkonstantinovskij", email = "Kirill.Konstantinovskii@stud.srh-university.de" }
+    { name = "Kirill Konstantinovskii", email = "Kirill.Konstantinovskii@stud.srh-university.de" }
 ]
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["ai-agent", "mcp", "llm", "tool-calling", "evals", "fastapi", "groq"]
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.162.0",
@@ -17,6 +20,10 @@ dependencies = [
     "pyyaml>=6.0.3",
     "uvicorn>=0.54.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/Kirill-ark/Job-Application-Agent"
+Demo = "https://job-application-agent-f2mr.onrender.com"
 
 [project.scripts]
 job-agent-mcp = "job_agent.mcp_server.__main__:main"
