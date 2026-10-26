@@ -218,9 +218,14 @@ function groupSteps(trace) {
   for (const step of trace) {
     if (step.kind === "llm") groups.push({ llm: step, calls: [] });
     else if (step.kind === "tool" && groups.length) groups[groups.length - 1].calls.push(step);
+    else if (step.kind === "invalid_call") {
+      // The provider refused the model's tool call; the model gets the reason and tries again.
+      const llm = { tool_calls: ["rejected"], prompt_tokens: 0, completion_tokens: 0, duration_ms: 0 };
+      groups.push({ llm, calls: [], rejected: step.error });
+    }
     // a "stopped" step (the user pressed Stop) is shown at the end, see showTrace
   }
-  for (const group of groups) group.done = group.calls.length >= group.llm.tool_calls.length;
+  for (const group of groups) group.done = group.rejected !== undefined || group.calls.length >= group.llm.tool_calls.length;
   return groups;
 }
 
@@ -228,6 +233,7 @@ const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 // "Scored 8 vacancies · best 86 good" when done, "Scoring 8 vacancies…" while running.
 function groupTitle(group) {
+  if (group.rejected !== undefined) return "A tool call was rejected · the agent tries again";
   const names = group.llm.tool_calls;
   if (!names.length) return "Wrote the summary";
   const parts = [];
@@ -324,7 +330,7 @@ function showTrace(run) {
   const open = new Set([...list.querySelectorAll("details")].map((d, i) => (d.open ? i : -1)));
   list.replaceChildren(
     ...groups.map((group, i) => {
-      const failed = group.calls.some((c) => !c.ok);
+      const failed = group.rejected !== undefined || group.calls.some((c) => !c.ok);
       // A group cut off by a stop or an error did not finish: no green check.
       const state = !group.done ? (running ? "spin" : "failed") : failed ? "failed" : "ok";
       const tokens = group.llm.prompt_tokens + group.llm.completion_tokens;
@@ -333,6 +339,7 @@ function showTrace(run) {
         el("div", { class: "step-title", text: groupTitle(group) }),
         el("div", { class: "step-meta", text: `${(group.llm.duration_ms / 1000).toFixed(1)} s to decide · ${tokens.toLocaleString()} tokens` }),
       );
+      if (group.rejected) item.append(el("div", { class: "step-error", text: group.rejected }));
       for (const call of group.calls.filter((c) => !c.ok)) item.append(el("div", { class: "step-error", text: call.error }));
       if (group.calls.length) {
         const details = el("details", {},

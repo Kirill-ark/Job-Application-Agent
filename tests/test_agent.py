@@ -14,7 +14,7 @@ from job_agent.agent.loop import MAX_LETTERS, MAX_STEPS, run_agent
 from job_agent.cv import DEFAULT_CV_PATH
 from job_agent.db import connect, init_db
 from job_agent.db.queries import get_run
-from job_agent.llm import ChatReply, LLMError, ToolCall
+from job_agent.llm import ChatReply, InvalidToolCall, LLMError, ToolCall
 from job_agent.mcp_server.server import build_server
 from tests.test_jobs import FakeArbeitnow
 from tests.test_mcp_server import JOB, fake_letter
@@ -312,3 +312,23 @@ async def test_tool_results_are_shown_in_full_only_once(
     # The trace keeps everything in full.
     search_step = [s for s in get_run(conn, 1)["trace"] if s.get("tool") == "search_jobs"][0]
     assert "snippet" in search_step["result"]["jobs"][0]
+
+
+async def test_a_rejected_tool_call_goes_back_to_the_llm(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    # Seen live: Groq refused search_jobs without "query" (status 400) and the run ended.
+    rejected = InvalidToolCall("parameters for tool search_jobs did not match schema")
+    llm = ScriptedLLM(rejected, calls(SEARCH), final("Done"))
+    summary = await run(server, conn, llm)
+    assert summary["status"] == "done"
+    assert "did not match schema" in llm.requests[1][-1]["content"]
+    assert get_run(conn, 1)["trace"][0]["kind"] == "invalid_call"
+
+
+async def test_rejected_calls_in_a_row_stop_the_run(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    summary = await run(server, conn, ScriptedLLM(InvalidToolCall("bad")))
+    assert summary["status"] == "failed"
+    assert summary["error"] == "Stopped after 3 invalid or failed steps in a row"

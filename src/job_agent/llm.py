@@ -28,6 +28,11 @@ class LLMError(Exception):
     """The LLM is not configured, not reachable, or gave no answer."""
 
 
+class InvalidToolCall(LLMError):
+    """The provider refused the model's tool call because it broke the tool's schema
+    (Groq checks this itself). The model can correct it, so the run goes on."""
+
+
 def _failed(error: openai.OpenAIError) -> LLMError:
     """An LLMError with Groq's short message only.
 
@@ -41,7 +46,13 @@ def _failed(error: openai.OpenAIError) -> LLMError:
     if isinstance(body, dict) and isinstance(body.get("error"), dict):
         detail = body["error"].get("message")
     parts = [type(error).__name__, f"status {status}" if status else None, detail]
-    return LLMError("LLM request failed: " + ", ".join(p for p in parts if p))
+    message = "LLM request failed: " + ", ".join(p for p in parts if p)
+    code = body.get("code") if isinstance(body, dict) else None
+    if isinstance(body, dict) and isinstance(body.get("error"), dict):
+        code = body["error"].get("code")
+    if code == "tool_use_failed":
+        return InvalidToolCall(detail or message)
+    return LLMError(message)
 
 
 def _api_key() -> str:

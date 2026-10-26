@@ -38,7 +38,7 @@ from job_agent.db.queries import (
     get_run,
     save_trace,
 )
-from job_agent.llm import Chat, ChatReply, LLMError, ToolCall
+from job_agent.llm import Chat, ChatReply, InvalidToolCall, LLMError, ToolCall
 
 logger = logging.getLogger(__name__)
 
@@ -250,6 +250,17 @@ async def run_agent(
         try:
             offered = llm_tools if run.searched else before_search(llm_tools)
             reply = await chat(messages, offered)
+        except InvalidToolCall as invalid:
+            # Like a failed tool call: the model reads why and tries again.
+            run.record({"kind": "invalid_call", "error": str(invalid), "duration_ms": 0})
+            messages.append(
+                {"role": "user", "content": f"Your tool call was rejected: {invalid}. Fix it."}
+            )
+            run.failed_steps += 1
+            if run.failed_steps >= MAX_FAILED_STEPS:
+                error = f"Stopped after {MAX_FAILED_STEPS} invalid or failed steps in a row"
+                break
+            continue
         except LLMError as llm_error:
             error = str(llm_error)
             break
