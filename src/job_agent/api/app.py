@@ -303,7 +303,7 @@ def create_app(
     temporary database.
 
     `trusted_proxies`: how many proxies in front of the app add themselves to
-    X-Forwarded-For (1 on Render; see client_ip). 0 means no proxy: the IP of
+    X-Forwarded-For (3 on Render; see client_ip). 0 means no proxy: the IP of
     the connection is used.
     """
     db_path = db_path or default_db_path()
