@@ -1,0 +1,851 @@
+{
+ "run_id": 10,
+ "status": "done",
+ "answer": "The best fit is the Internship – Machine Learning Research Engineer at Perplexity (score 86, no gaps at all), followed by the Working Student role at Tracium GmbH (score 71, with a minor gap in Data Science). The most common gap across the other vacancies was \"requires professional experience,\" which rules out most of them for a student. Two cover letters are now waiting in your approval queue — just review and mark them ready when you're satisfied.",
+ "error": null,
+ "scores": [
+  {
+   "job_id": "internship-machine-learning-research-engineer-berlin-168024",
+   "title": "Internship - Machine Learning Research Engineer",
+   "company": "Perplexity",
+   "score": 86,
+   "label": "good",
+   "matched": [
+    "Machine Learning",
+    "Deep Learning",
+    "PyTorch",
+    "RAG"
+   ],
+   "gaps": [],
+   "reasons": "Good match (86/100). Matches: Machine Learning, Deep Learning, PyTorch, RAG.",
+   "url": "https://www.arbeitnow.com/jobs/companies/perplexity/internship-machine-learning-research-engineer-berlin-168024"
+  },
+  {
+   "job_id": "working-student-ai-engineering-document-intelligence-berlin-378393",
+   "title": "Working Student — AI Engineering & Document Intelligence",
+   "company": "Tracium GmbH",
+   "score": 71,
+   "label": "good",
+   "matched": [
+    "Git",
+    "LLM",
+    "Machine Learning",
+    "Python"
+   ],
+   "gaps": [
+    "Data Science"
+   ],
+   "reasons": "Good match (71/100). Matches: Git, LLM, Machine Learning, Python. Gaps: Data Science.",
+   "url": "https://www.arbeitnow.com/jobs/companies/tracium-gmbh/working-student-ai-engineering-document-intelligence-berlin-378393"
+  },
+  {
+   "job_id": "senior-ai-engineer-document-intelligence-berlin-227489",
+   "title": "Senior AI Engineer — Document Intelligence",
+   "company": "Tracium GmbH",
+   "score": 24,
+   "label": "bad",
+   "matched": [
+    "LLM",
+    "Machine Learning",
+    "Python"
+   ],
+   "gaps": [
+    "Requires professional experience"
+   ],
+   "reasons": "Bad match (24/100). Matches: LLM, Machine Learning, Python. Gaps: Requires professional experience.",
+   "url": "https://www.arbeitnow.com/jobs/companies/tracium-gmbh/senior-ai-engineer-document-intelligence-berlin-227489"
+  },
+  {
+   "job_id": "machine-learning-engineer-berlin-325189",
+   "title": "Machine Learning Engineer (m/f/x)",
+   "company": "caronsale",
+   "score": 23,
+   "label": "bad",
+   "matched": [
+    "Machine Learning",
+    "Python"
+   ],
+   "gaps": [
+    "AWS (listed in the CV, but not used in a project or job)",
+    "Azure",
+    "CI/CD",
+    "Data Warehouse",
+    "Databricks",
+    "Snowflake",
+    "Terraform",
+    "dbt"
+   ],
+   "reasons": "Bad match (23/100). Matches: Machine Learning, Python. Gaps: AWS (listed in the CV, but not used in a project or job); Azure; CI/CD; Data Warehouse.",
+   "url": "https://www.arbeitnow.com/jobs/companies/caronsale/machine-learning-engineer-berlin-325189"
+  },
+  {
+   "job_id": "senior-tech-lead-backend-engineer-managed-kubernetes-berlin-196892",
+   "title": "Senior/Tech Lead Backend Engineer (Managed Kubernetes)",
+   "company": "Nebius",
+   "score": 18,
+   "label": "bad",
+   "matched": [
+    "Machine Learning"
+   ],
+   "gaps": [
+    "Kubernetes (listed in the CV, but not used in a project or job)",
+    "Requires professional experience"
+   ],
+   "reasons": "Bad match (18/100). Matches: Machine Learning. Gaps: Kubernetes (listed in the CV, but not used in a project or job); Requires professional experience.",
+   "url": "https://www.arbeitnow.com/jobs/companies/nebius/senior-tech-lead-backend-engineer-managed-kubernetes-berlin-196892"
+  },
+  {
+   "job_id": "data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939",
+   "title": "Data Scientist (Kaggle/DrivenData) (Remote-Worldwide)",
+   "company": "Your Software Supplier",
+   "score": 15,
+   "label": "bad",
+   "matched": [
+    "Machine Learning"
+   ],
+   "gaps": [
+    "Data Science",
+    "Requires professional experience"
+   ],
+   "reasons": "Bad match (15/100). Matches: Machine Learning. Gaps: Data Science; Requires professional experience.",
+   "url": "https://www.arbeitnow.nl/jobs/companies/your-software-supplier/data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939"
+  },
+  {
+   "job_id": "ai-application-engineer-ai-products-llm-rag-berlin-32333",
+   "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+   "company": "Machine Learning Reply",
+   "score": 13,
+   "label": "bad",
+   "matched": [
+    "LLM",
+    "RAG",
+    "Docker",
+    "Machine Learning",
+    "Python"
+   ],
+   "gaps": [
+    "AI Agents",
+    "AWS (listed in the CV, but not used in a project or job)",
+    "Azure",
+    "CI/CD",
+    "Data Science",
+    "Embeddings",
+    "GCP",
+    "Hugging Face",
+    "Kubernetes (listed in the CV, but not used in a project or job)",
+    "LangChain",
+    "LlamaIndex",
+    "Microservices",
+    "Requires professional experience"
+   ],
+   "reasons": "Bad match (13/100). Matches: LLM, RAG, Docker, Machine Learning, Python. Gaps: AI Agents; AWS (listed in the CV, but not used in a project or job); Azure; CI/CD.",
+   "url": "https://www.arbeitnow.com/jobs/companies/machine-learning-reply/ai-application-engineer-ai-products-llm-rag-berlin-32333"
+  },
+  {
+   "job_id": "ai-application-engineer-ai-products-llm-rag-berlin-377089",
+   "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+   "company": "Machine Learning Reply",
+   "score": 13,
+   "label": "bad",
+   "matched": [
+    "LLM",
+    "RAG",
+    "Docker",
+    "Machine Learning",
+    "Python"
+   ],
+   "gaps": [
+    "AI Agents",
+    "AWS (listed in the CV, but not used in a project or job)",
+    "Azure",
+    "CI/CD",
+    "Data Science",
+    "Embeddings",
+    "GCP",
+    "Hugging Face",
+    "Kubernetes (listed in the CV, but not used in a project or job)",
+    "LangChain",
+    "LlamaIndex",
+    "Microservices",
+    "Requires professional experience"
+   ],
+   "reasons": "Bad match (13/100). Matches: LLM, RAG, Docker, Machine Learning, Python. Gaps: AI Agents; AWS (listed in the CV, but not used in a project or job); Azure; CI/CD.",
+   "url": "https://www.arbeitnow.com/jobs/companies/machine-learning-reply/ai-application-engineer-ai-products-llm-rag-berlin-377089"
+  }
+ ],
+ "drafts": [
+  {
+   "draft_id": 20,
+   "job_id": "internship-machine-learning-research-engineer-berlin-168024",
+   "title": "Internship - Machine Learning Research Engineer",
+   "company": "Perplexity",
+   "status": "draft",
+   "grounded": true,
+   "approval": "pending"
+  },
+  {
+   "draft_id": 21,
+   "job_id": "working-student-ai-engineering-document-intelligence-berlin-378393",
+   "title": "Working Student — AI Engineering & Document Intelligence",
+   "company": "Tracium GmbH",
+   "status": "draft",
+   "grounded": true,
+   "approval": "pending"
+  }
+ ],
+ "llm_calls": 4,
+ "tokens": 14530,
+ "goal": "Find machine learning working student or internship jobs in Berlin for me and prepare cover letters for the best ones.",
+ "trace": [
+  {
+   "kind": "llm",
+   "text": null,
+   "tool_calls": [
+    "read_cv",
+    "search_jobs",
+    "search_jobs"
+   ],
+   "prompt_tokens": 1543,
+   "completion_tokens": 274,
+   "duration_ms": 945
+  },
+  {
+   "kind": "tool",
+   "tool": "read_cv",
+   "arguments": {},
+   "duration_ms": 10,
+   "ok": true,
+   "result": {
+    "name": "Alex Example",
+    "headline": "Computer Science student focused on machine learning and backend",
+    "location": "Berlin",
+    "availability": "Werkstudent, up to 20 hours per week",
+    "looking_for": [
+     "student",
+     "intern"
+    ],
+    "languages": [
+     {
+      "language": "English",
+      "level": "C1"
+     },
+     {
+      "language": "German",
+      "level": "B2"
+     },
+     {
+      "language": "Russian",
+      "level": "native"
+     }
+    ],
+    "verified_skills": [
+     "Airflow",
+     "Computer Vision",
+     "Deep Learning",
+     "Docker",
+     "FastAPI",
+     "Git",
+     "LLM",
+     "Machine Learning",
+     "NLP",
+     "PostgreSQL",
+     "PyTorch",
+     "Python",
+     "RAG",
+     "REST API",
+     "SQL",
+     "pandas",
+     "scikit-learn"
+    ],
+    "unverified_skills": [
+     "AWS",
+     "Kubernetes"
+    ],
+    "facts": {
+     "p1": "Project Pneumonia X-Ray Classifier: Image classifier that detects pneumonia on chest X-rays (tech: Python, PyTorch, Computer Vision, Docker)",
+     "p1.f1": "Fine-tuned a pretrained ResNet18 on about 5,800 chest X-ray images",
+     "p1.f2": "Reached 0.93 recall on the held-out test set",
+     "p2": "Project Support Ticket Classifier: NLP model that routes customer support tickets to the right team (tech: Python, sklearn, NLP, FastAPI, Docker)",
+     "p2.f1": "Trained a TF-IDF and logistic regression model on 20,000 labeled tickets",
+     "p2.f2": "Served the model through a FastAPI endpoint in a Docker container",
+     "p3": "Project Chat With Your Docs: RAG app that answers questions about uploaded PDF files with page citations (tech: Python, RAG, LLM, Git)",
+     "p3.f1": "Measured retrieval hit rate on a hand-written question set",
+     "p3.f2": "Compared two embedding models on answer quality and memory use",
+     "e1": "Working Student, Data at Example Retail GmbH, 2025-04 - 2025-09 (tech: Python, SQL, PostgreSQL, pandas, Airflow)",
+     "e1.f1": "Built Python ETL scripts that load weekly sales data into PostgreSQL",
+     "e1.f2": "Automated a weekly sales report that the team previously built by hand",
+     "ed1": "B.Sc. Computer Science, Example University of Applied Sciences Berlin, 2024-10 - present",
+     "lang1": "English: C1",
+     "lang2": "German: B2",
+     "lang3": "Russian: native",
+     "av": "Availability: Werkstudent, up to 20 hours per week",
+     "sk": "Other skills, not used in a project or job: Kubernetes, AWS"
+    }
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "search_jobs",
+   "arguments": {
+    "level": "student",
+    "limit": 8,
+    "location": "Berlin",
+    "query": "machine learning"
+   },
+   "duration_ms": 236,
+   "ok": true,
+   "result": {
+    "count": 8,
+    "jobs": [
+     {
+      "id": "working-student-ai-engineering-document-intelligence-berlin-378393",
+      "title": "Working Student — AI Engineering & Document Intelligence",
+      "company": "Tracium GmbH",
+      "location": "Berlin",
+      "remote": true,
+      "level": "student",
+      "snippet": "Location: Hamburg, Germany · Part-time alongside your studies About Tracium https://www.linkedin.com/company/tracium/ Tracium builds AI-assisted softw"
+     },
+     {
+      "id": "machine-learning-engineer-berlin-325189",
+      "title": "Machine Learning Engineer (m/f/x)",
+      "company": "caronsale",
+      "location": "Berlin",
+      "remote": false,
+      "level": "unknown",
+      "snippet": "<p>Four models in production today. Fifteen to twenty by mid-2027. The shared pipeline that gets them there has to hold — and you own everything after"
+     },
+     {
+      "id": "internship-machine-learning-research-engineer-berlin-168024",
+      "title": "Internship - Machine Learning Research Engineer",
+      "company": "Perplexity",
+      "location": "Berlin",
+      "remote": false,
+      "level": "intern",
+      "snippet": "Internship Program Berlin Internship program: 12 - 24 weeks, full-time, in-person in the Berlin office. Responsibilities Relentlessly push search qual"
+     },
+     {
+      "id": "ai-application-engineer-ai-products-llm-rag-berlin-32333",
+      "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+      "company": "Machine Learning Reply",
+      "location": "Berlin, Berlin, Germany",
+      "remote": false,
+      "level": "experienced",
+      "snippet": "At Machine Learning Reply, we help organizations turn cutting-edge AI technologies into real-world applications and scalable digital products. To stre"
+     },
+     {
+      "id": "data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939",
+      "title": "Data Scientist (Kaggle/DrivenData) (Remote-Worldwide)",
+      "company": "Your Software Supplier",
+      "location": "Amsterdam",
+      "remote": true,
+      "level": "experienced",
+      "snippet": "This job is with our partner Micro1. What You’ll Do Build reproducible environments, prepare relevant data and dependencies, and implement reference s"
+     },
+     {
+      "id": "senior-ai-engineer-document-intelligence-berlin-227489",
+      "title": "Senior AI Engineer — Document Intelligence",
+      "company": "Tracium GmbH",
+      "location": "Berlin",
+      "remote": true,
+      "level": "experienced",
+      "snippet": "About Tracium https://www.linkedin.com/company/tracium/ Tracium builds AI-assisted technical documentation software that turns complex manuals and eng"
+     },
+     {
+      "id": "ai-application-engineer-ai-products-llm-rag-berlin-377089",
+      "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+      "company": "Machine Learning Reply",
+      "location": "Berlin",
+      "remote": false,
+      "level": "experienced",
+      "snippet": "At Machine Learning Reply, we help organizations turn cutting-edge AI technologies into real-world applications and scalable digital products. To stre"
+     },
+     {
+      "id": "senior-tech-lead-backend-engineer-managed-kubernetes-berlin-196892",
+      "title": "Senior/Tech Lead Backend Engineer (Managed Kubernetes)",
+      "company": "Nebius",
+      "location": "Berlin",
+      "remote": false,
+      "level": "experienced",
+      "snippet": "<div class=\"content-intro\"><p><strong>About Nebius:</strong></p> <p>Nebius is leading a new era in cloud infrastructure for the global AI economy. We "
+     }
+    ]
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "search_jobs",
+   "arguments": {
+    "level": "intern",
+    "limit": 8,
+    "location": "Berlin",
+    "query": "machine learning"
+   },
+   "duration_ms": 173,
+   "ok": true,
+   "result": {
+    "count": 8,
+    "jobs": [
+     {
+      "id": "internship-machine-learning-research-engineer-berlin-168024",
+      "title": "Internship - Machine Learning Research Engineer",
+      "company": "Perplexity",
+      "location": "Berlin",
+      "remote": false,
+      "level": "intern",
+      "snippet": "Internship Program Berlin Internship program: 12 - 24 weeks, full-time, in-person in the Berlin office. Responsibilities Relentlessly push search qual"
+     },
+     {
+      "id": "machine-learning-engineer-berlin-325189",
+      "title": "Machine Learning Engineer (m/f/x)",
+      "company": "caronsale",
+      "location": "Berlin",
+      "remote": false,
+      "level": "unknown",
+      "snippet": "<p>Four models in production today. Fifteen to twenty by mid-2027. The shared pipeline that gets them there has to hold — and you own everything after"
+     },
+     {
+      "id": "ai-application-engineer-ai-products-llm-rag-berlin-32333",
+      "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+      "company": "Machine Learning Reply",
+      "location": "Berlin, Berlin, Germany",
+      "remote": false,
+      "level": "experienced",
+      "snippet": "At Machine Learning Reply, we help organizations turn cutting-edge AI technologies into real-world applications and scalable digital products. To stre"
+     },
+     {
+      "id": "data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939",
+      "title": "Data Scientist (Kaggle/DrivenData) (Remote-Worldwide)",
+      "company": "Your Software Supplier",
+      "location": "Amsterdam",
+      "remote": true,
+      "level": "experienced",
+      "snippet": "This job is with our partner Micro1. What You’ll Do Build reproducible environments, prepare relevant data and dependencies, and implement reference s"
+     },
+     {
+      "id": "senior-ai-engineer-document-intelligence-berlin-227489",
+      "title": "Senior AI Engineer — Document Intelligence",
+      "company": "Tracium GmbH",
+      "location": "Berlin",
+      "remote": true,
+      "level": "experienced",
+      "snippet": "About Tracium https://www.linkedin.com/company/tracium/ Tracium builds AI-assisted technical documentation software that turns complex manuals and eng"
+     },
+     {
+      "id": "working-student-ai-engineering-document-intelligence-berlin-378393",
+      "title": "Working Student — AI Engineering & Document Intelligence",
+      "company": "Tracium GmbH",
+      "location": "Berlin",
+      "remote": true,
+      "level": "student",
+      "snippet": "Location: Hamburg, Germany · Part-time alongside your studies About Tracium https://www.linkedin.com/company/tracium/ Tracium builds AI-assisted softw"
+     },
+     {
+      "id": "ai-application-engineer-ai-products-llm-rag-berlin-377089",
+      "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+      "company": "Machine Learning Reply",
+      "location": "Berlin",
+      "remote": false,
+      "level": "experienced",
+      "snippet": "At Machine Learning Reply, we help organizations turn cutting-edge AI technologies into real-world applications and scalable digital products. To stre"
+     },
+     {
+      "id": "senior-tech-lead-backend-engineer-managed-kubernetes-berlin-196892",
+      "title": "Senior/Tech Lead Backend Engineer (Managed Kubernetes)",
+      "company": "Nebius",
+      "location": "Berlin",
+      "remote": false,
+      "level": "experienced",
+      "snippet": "<div class=\"content-intro\"><p><strong>About Nebius:</strong></p> <p>Nebius is leading a new era in cloud infrastructure for the global AI economy. We "
+     }
+    ]
+   }
+  },
+  {
+   "kind": "llm",
+   "text": "Now let me score all unique vacancies from both searches:\n\n",
+   "tool_calls": [
+    "score_match",
+    "score_match",
+    "score_match",
+    "score_match",
+    "score_match",
+    "score_match",
+    "score_match",
+    "score_match"
+   ],
+   "prompt_tokens": 3705,
+   "completion_tokens": 606,
+   "duration_ms": 2135
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "working-student-ai-engineering-document-intelligence-berlin-378393"
+   },
+   "duration_ms": 9,
+   "ok": true,
+   "result": {
+    "job_id": "working-student-ai-engineering-document-intelligence-berlin-378393",
+    "title": "Working Student — AI Engineering & Document Intelligence",
+    "company": "Tracium GmbH",
+    "score": 71,
+    "label": "good",
+    "matched": [
+     "Git",
+     "LLM",
+     "Machine Learning",
+     "Python"
+    ],
+    "gaps": [
+     "Data Science"
+    ],
+    "reasons": "Good match (71/100). Matches: Git, LLM, Machine Learning, Python. Gaps: Data Science."
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "machine-learning-engineer-berlin-325189"
+   },
+   "duration_ms": 4,
+   "ok": true,
+   "result": {
+    "job_id": "machine-learning-engineer-berlin-325189",
+    "title": "Machine Learning Engineer (m/f/x)",
+    "company": "caronsale",
+    "score": 23,
+    "label": "bad",
+    "matched": [
+     "Machine Learning",
+     "Python"
+    ],
+    "gaps": [
+     "AWS (listed in the CV, but not used in a project or job)",
+     "Azure",
+     "CI/CD",
+     "Data Warehouse",
+     "Databricks",
+     "Snowflake",
+     "Terraform",
+     "dbt"
+    ],
+    "reasons": "Bad match (23/100). Matches: Machine Learning, Python. Gaps: AWS (listed in the CV, but not used in a project or job); Azure; CI/CD; Data Warehouse."
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "internship-machine-learning-research-engineer-berlin-168024"
+   },
+   "duration_ms": 3,
+   "ok": true,
+   "result": {
+    "job_id": "internship-machine-learning-research-engineer-berlin-168024",
+    "title": "Internship - Machine Learning Research Engineer",
+    "company": "Perplexity",
+    "score": 86,
+    "label": "good",
+    "matched": [
+     "Machine Learning",
+     "Deep Learning",
+     "PyTorch",
+     "RAG"
+    ],
+    "gaps": [],
+    "reasons": "Good match (86/100). Matches: Machine Learning, Deep Learning, PyTorch, RAG."
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "ai-application-engineer-ai-products-llm-rag-berlin-32333"
+   },
+   "duration_ms": 3,
+   "ok": true,
+   "result": {
+    "job_id": "ai-application-engineer-ai-products-llm-rag-berlin-32333",
+    "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+    "company": "Machine Learning Reply",
+    "score": 13,
+    "label": "bad",
+    "matched": [
+     "LLM",
+     "RAG",
+     "Docker",
+     "Machine Learning",
+     "Python"
+    ],
+    "gaps": [
+     "AI Agents",
+     "AWS (listed in the CV, but not used in a project or job)",
+     "Azure",
+     "CI/CD",
+     "Data Science",
+     "Embeddings",
+     "GCP",
+     "Hugging Face",
+     "Kubernetes (listed in the CV, but not used in a project or job)",
+     "LangChain",
+     "LlamaIndex",
+     "Microservices",
+     "Requires professional experience"
+    ],
+    "reasons": "Bad match (13/100). Matches: LLM, RAG, Docker, Machine Learning, Python. Gaps: AI Agents; AWS (listed in the CV, but not used in a project or job); Azure; CI/CD."
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939"
+   },
+   "duration_ms": 2,
+   "ok": true,
+   "result": {
+    "job_id": "data-scientist-kaggle-drivendata-remote-worldwide-amsterdam-169939",
+    "title": "Data Scientist (Kaggle/DrivenData) (Remote-Worldwide)",
+    "company": "Your Software Supplier",
+    "score": 15,
+    "label": "bad",
+    "matched": [
+     "Machine Learning"
+    ],
+    "gaps": [
+     "Data Science",
+     "Requires professional experience"
+    ],
+    "reasons": "Bad match (15/100). Matches: Machine Learning. Gaps: Data Science; Requires professional experience."
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "senior-ai-engineer-document-intelligence-berlin-227489"
+   },
+   "duration_ms": 2,
+   "ok": true,
+   "result": {
+    "job_id": "senior-ai-engineer-document-intelligence-berlin-227489",
+    "title": "Senior AI Engineer — Document Intelligence",
+    "company": "Tracium GmbH",
+    "score": 24,
+    "label": "bad",
+    "matched": [
+     "LLM",
+     "Machine Learning",
+     "Python"
+    ],
+    "gaps": [
+     "Requires professional experience"
+    ],
+    "reasons": "Bad match (24/100). Matches: LLM, Machine Learning, Python. Gaps: Requires professional experience."
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "ai-application-engineer-ai-products-llm-rag-berlin-377089"
+   },
+   "duration_ms": 2,
+   "ok": true,
+   "result": {
+    "job_id": "ai-application-engineer-ai-products-llm-rag-berlin-377089",
+    "title": "AI Application Engineer – AI Products (LLM & RAG) (m/f/d)",
+    "company": "Machine Learning Reply",
+    "score": 13,
+    "label": "bad",
+    "matched": [
+     "LLM",
+     "RAG",
+     "Docker",
+     "Machine Learning",
+     "Python"
+    ],
+    "gaps": [
+     "AI Agents",
+     "AWS (listed in the CV, but not used in a project or job)",
+     "Azure",
+     "CI/CD",
+     "Data Science",
+     "Embeddings",
+     "GCP",
+     "Hugging Face",
+     "Kubernetes (listed in the CV, but not used in a project or job)",
+     "LangChain",
+     "LlamaIndex",
+     "Microservices",
+     "Requires professional experience"
+    ],
+    "reasons": "Bad match (13/100). Matches: LLM, RAG, Docker, Machine Learning, Python. Gaps: AI Agents; AWS (listed in the CV, but not used in a project or job); Azure; CI/CD."
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "score_match",
+   "arguments": {
+    "job_id": "senior-tech-lead-backend-engineer-managed-kubernetes-berlin-196892"
+   },
+   "duration_ms": 2,
+   "ok": true,
+   "result": {
+    "job_id": "senior-tech-lead-backend-engineer-managed-kubernetes-berlin-196892",
+    "title": "Senior/Tech Lead Backend Engineer (Managed Kubernetes)",
+    "company": "Nebius",
+    "score": 18,
+    "label": "bad",
+    "matched": [
+     "Machine Learning"
+    ],
+    "gaps": [
+     "Kubernetes (listed in the CV, but not used in a project or job)",
+     "Requires professional experience"
+    ],
+    "reasons": "Bad match (18/100). Matches: Machine Learning. Gaps: Kubernetes (listed in the CV, but not used in a project or job); Requires professional experience."
+   }
+  },
+  {
+   "kind": "llm",
+   "text": "Two good matches found. Let me draft cover letters for both:\n\n",
+   "tool_calls": [
+    "draft_cover_letter",
+    "draft_cover_letter"
+   ],
+   "prompt_tokens": 3946,
+   "completion_tokens": 186,
+   "duration_ms": 17068
+  },
+  {
+   "kind": "tool",
+   "tool": "draft_cover_letter",
+   "arguments": {
+    "job_id": "internship-machine-learning-research-engineer-berlin-168024"
+   },
+   "duration_ms": 3215,
+   "ok": true,
+   "result": {
+    "draft_id": 20,
+    "job_id": "internship-machine-learning-research-engineer-berlin-168024",
+    "title": "Internship - Machine Learning Research Engineer",
+    "company": "Perplexity",
+    "letter": "Dear Perplexity team,\n\nI am eager to contribute to machine learning research and to work on retrieval and ranking models.\n\nI built an image classifier that fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images. I also created a retrieval‑augmented generation app that answers questions from PDFs, measuring retrieval hit rate and comparing two embedding models on answer quality and memory use.\n\nThank you for considering my application. Sincerely, Alex Example",
+    "grounded": true,
+    "issues": [],
+    "approval": "pending"
+   }
+  },
+  {
+   "kind": "tool",
+   "tool": "draft_cover_letter",
+   "arguments": {
+    "job_id": "working-student-ai-engineering-document-intelligence-berlin-378393"
+   },
+   "duration_ms": 3737,
+   "ok": true,
+   "result": {
+    "draft_id": 21,
+    "job_id": "working-student-ai-engineering-document-intelligence-berlin-378393",
+    "title": "Working Student — AI Engineering & Document Intelligence",
+    "company": "Tracium GmbH",
+    "letter": "Dear Tracium GmbH team, I am excited to apply for the Working Student — AI Engineering & Document Intelligence position.\n\nThe role aligns with my focus on machine learning and document intelligence, and I have hands‑on experience with Python, Git, LLMs and machine learning. My current studies in Computer Science at Example University of Applied Sciences Berlin complement the required enrolment criteria.\n\nIn Project Pneumonia X‑Ray Classifier I fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images, demonstrating practical model development. For the Support Ticket Classifier project I trained a TF‑IDF and logistic regression model on 20,000 tickets and served the model through a FastAPI endpoint in a Docker container. As a Working Student at Example Retail GmbH I built Python ETL scripts that load weekly sales data into PostgreSQL and automated a weekly sales report for the team.\n\nI look forward to contributing to Tracium’s document processing workflows and sharing clear findings in English. Sincerely, Alex Example",
+    "grounded": true,
+    "issues": [],
+    "approval": "pending"
+   }
+  },
+  {
+   "kind": "llm",
+   "text": "The best fit is the Internship – Machine Learning Research Engineer at Perplexity (score 86, no gaps at all), followed by the Working Student role at Tracium GmbH (score 71, with a minor gap in Data Science). The most common gap across the other vacancies was \"requires professional experience,\" which rules out most of them for a student. Two cover letters are now waiting in your approval queue — just review and mark them ready when you're satisfied.",
+   "tool_calls": [],
+   "prompt_tokens": 4111,
+   "completion_tokens": 159,
+   "duration_ms": 28058
+  }
+ ],
+ "started_at": "2026-10-25T21:58:30.102636+00:00",
+ "finished_at": "2026-10-25T21:59:34.806620+00:00",
+ "letters": {
+  "20": {
+   "draft_id": 20,
+   "status": "draft",
+   "text": "Dear Perplexity team,\n\nI am eager to contribute to machine learning research and to work on retrieval and ranking models. [p1, p3]\n\nI built an image classifier that fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images. [p1.f1] I also created a retrieval‑augmented generation app that answers questions from PDFs, measuring retrieval hit rate and comparing two embedding models on answer quality and memory use. [p3.f1, p3.f2]\n\nThank you for considering my application. Sincerely, Alex Example",
+   "plain_text": "Dear Perplexity team,\n\nI am eager to contribute to machine learning research and to work on retrieval and ranking models.\n\nI built an image classifier that fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images. I also created a retrieval‑augmented generation app that answers questions from PDFs, measuring retrieval hit rate and comparing two embedding models on answer quality and memory use.\n\nThank you for considering my application. Sincerely, Alex Example",
+   "edited_text": null,
+   "cited_facts": {
+    "p1": "Project Pneumonia X-Ray Classifier: Image classifier that detects pneumonia on chest X-rays (tech: Python, PyTorch, Computer Vision, Docker)",
+    "p1.f1": "Fine-tuned a pretrained ResNet18 on about 5,800 chest X-ray images",
+    "p3": "Project Chat With Your Docs: RAG app that answers questions about uploaded PDF files with page citations (tech: Python, RAG, LLM, Git)",
+    "p3.f1": "Measured retrieval hit rate on a hand-written question set",
+    "p3.f2": "Compared two embedding models on answer quality and memory use"
+   },
+   "issues": [],
+   "vacancy": {
+    "id": "internship-machine-learning-research-engineer-berlin-168024",
+    "title": "Internship - Machine Learning Research Engineer",
+    "company": "Perplexity",
+    "location": "Berlin",
+    "url": "https://www.arbeitnow.com/jobs/companies/perplexity/internship-machine-learning-research-engineer-berlin-168024"
+   },
+   "approvals": [
+    {
+     "id": 25,
+     "draft_id": 20,
+     "action": "mark_ready",
+     "event": "requested",
+     "comment": null,
+     "created_at": "2026-10-25T21:59:02.998508+00:00",
+     "decision": null,
+     "decision_comment": null,
+     "decided_at": null,
+     "status": "pending"
+    }
+   ]
+  },
+  "21": {
+   "draft_id": 21,
+   "status": "draft",
+   "text": "Dear Tracium GmbH team, I am excited to apply for the Working Student — AI Engineering & Document Intelligence position.\n\nThe role aligns with my focus on machine learning and document intelligence, and I have hands‑on experience with Python, Git, LLMs and machine learning. [p1, p2, p3] My current studies in Computer Science at Example University of Applied Sciences Berlin complement the required enrolment criteria. [ed1]\n\nIn Project Pneumonia X‑Ray Classifier I fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images, demonstrating practical model development. [p1.f1] For the Support Ticket Classifier project I trained a TF‑IDF and logistic regression model on 20,000 tickets and served the model through a FastAPI endpoint in a Docker container. [p2.f1, p2.f2] As a Working Student at Example Retail GmbH I built Python ETL scripts that load weekly sales data into PostgreSQL and automated a weekly sales report for the team. [e1.f1, e1.f2]\n\nI look forward to contributing to Tracium’s document processing workflows and sharing clear findings in English. Sincerely, Alex Example",
+   "plain_text": "Dear Tracium GmbH team, I am excited to apply for the Working Student — AI Engineering & Document Intelligence position.\n\nThe role aligns with my focus on machine learning and document intelligence, and I have hands‑on experience with Python, Git, LLMs and machine learning. My current studies in Computer Science at Example University of Applied Sciences Berlin complement the required enrolment criteria.\n\nIn Project Pneumonia X‑Ray Classifier I fine‑tuned a pretrained ResNet18 on about 5,800 chest X‑ray images, demonstrating practical model development. For the Support Ticket Classifier project I trained a TF‑IDF and logistic regression model on 20,000 tickets and served the model through a FastAPI endpoint in a Docker container. As a Working Student at Example Retail GmbH I built Python ETL scripts that load weekly sales data into PostgreSQL and automated a weekly sales report for the team.\n\nI look forward to contributing to Tracium’s document processing workflows and sharing clear findings in English. Sincerely, Alex Example",
+   "edited_text": null,
+   "cited_facts": {
+    "e1.f1": "Built Python ETL scripts that load weekly sales data into PostgreSQL",
+    "e1.f2": "Automated a weekly sales report that the team previously built by hand",
+    "ed1": "B.Sc. Computer Science, Example University of Applied Sciences Berlin, 2024-10 - present",
+    "p1": "Project Pneumonia X-Ray Classifier: Image classifier that detects pneumonia on chest X-rays (tech: Python, PyTorch, Computer Vision, Docker)",
+    "p1.f1": "Fine-tuned a pretrained ResNet18 on about 5,800 chest X-ray images",
+    "p2": "Project Support Ticket Classifier: NLP model that routes customer support tickets to the right team (tech: Python, sklearn, NLP, FastAPI, Docker)",
+    "p2.f1": "Trained a TF-IDF and logistic regression model on 20,000 labeled tickets",
+    "p2.f2": "Served the model through a FastAPI endpoint in a Docker container",
+    "p3": "Project Chat With Your Docs: RAG app that answers questions about uploaded PDF files with page citations (tech: Python, RAG, LLM, Git)"
+   },
+   "issues": [],
+   "vacancy": {
+    "id": "working-student-ai-engineering-document-intelligence-berlin-378393",
+    "title": "Working Student — AI Engineering & Document Intelligence",
+    "company": "Tracium GmbH",
+    "location": "Berlin",
+    "url": "https://www.arbeitnow.com/jobs/companies/tracium-gmbh/working-student-ai-engineering-document-intelligence-berlin-378393"
+   },
+   "approvals": [
+    {
+     "id": 26,
+     "draft_id": 21,
+     "action": "mark_ready",
+     "event": "requested",
+     "comment": null,
+     "created_at": "2026-10-25T21:59:06.740212+00:00",
+     "decision": null,
+     "decision_comment": null,
+     "decided_at": null,
+     "status": "pending"
+    }
+   ]
+  }
+ }
+}

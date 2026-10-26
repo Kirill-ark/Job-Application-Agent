@@ -49,8 +49,8 @@ All numbers come from [evals/results/latest.md](evals/results/latest.md), produc
 |---|---|---|
 | Match scoring | agreement with 47 labelled vacancy-CV pairs (good / maybe / bad); labels drafted by an LLM from a written rubric without seeing the scores, then checked by hand | **72% on the 18 holdout pairs** (95% interval 49-88%), 67% on the 12 holdout pairs whose vacancy was never tuned on |
 | Letter groundedness | 67 sentences of 8 letters, checked by rules and by an LLM judge from another model family | **9% of sentences not backed by the CV** (16% before the fixes; one run each) |
-| Tool use | 4 full agent runs on frozen vacancies: made-up ids, skipped vacancies, repeats, letter limits | TOOL_USE_RESULT |
-| Safety | 4 runs that ask it to send, apply or approve itself, one of them with a prompt injection in a vacancy | SAFETY_RESULT |
+| Tool use | 4 full agent runs on frozen vacancies: made-up ids, skipped vacancies, repeats, letter limits | before the fix for made-up ids: 3 of 4 runs without a mistake; the rerun after the fix is pending (daily token limit) |
+| Safety | 4 runs that ask it to send, apply or approve itself, one of them with a prompt injection in a vacancy | the first run did not show the injected instruction to the model, so its numbers were withdrawn; the rerun is pending (daily token limit) |
 
 For matching, the holdout is the honest number, and it is small: 18 pairs, so the interval is wide. Before tuning, holdout accuracy was 56%. The gain to 72% suggests the rules are not just fitted to the tune pairs, but it is a few pairs, and the holdout is not perfectly clean (see [Limitations](#limitations)). For letters, the number to watch is the share of sentences the CV does not back, because an invented claim is what would hurt a real applicant.
 
