@@ -2,17 +2,19 @@
 
 A tool-using AI agent that finds AI/ML working student and internship roles in Berlin, scores them against a CV and drafts cover letters grounded in that CV. Its tools run in an MCP server, it is served through FastAPI with a single web page, and nothing leaves the system without a human approving it.
 
-**Live demo:** DEMO_URL
+**Live demo:** https://job-application-agent-f2mr.onrender.com (free hosting: after 15 minutes without visitors the first page load takes about a minute)
 
 ---
 
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/run.png" width="32%" />
-  <img src="screenshots/letter.png" width="32%" />
-  <img src="screenshots/cv.png" width="32%" />
+  <img src="screenshots/run.png" width="32%" alt="A run: the agent's steps, scored vacancies and drafted letters" />
+  <img src="screenshots/letter.png" width="32%" alt="A letter: each sentence shows the CV fact it is based on" />
+  <img src="screenshots/cv.png" width="32%" alt="A pasted CV as the agent will see it, before the person confirms it" />
 </p>
+
+<p align="center"><sub>A run on live vacancies · a letter with the CV fact behind a sentence · a pasted CV before it is confirmed</sub></p>
 
 ---
 

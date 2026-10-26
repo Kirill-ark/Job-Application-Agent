@@ -4,10 +4,12 @@ The LLM only copies what the text says into the fields of cv.CV. Because the
 letters are later checked against these facts, a fact the LLM invented here
 would pass every later check. So two guards:
 
-1. `check_parsed` compares the result with the pasted text by rules: every
+1. `move_listed_skills` and `drop_used_skills` fix by code what models
+   often get wrong: which skills were used in a job or project.
+2. `check_parsed` compares the result with the pasted text by rules: every
    number in a fact, every tech item, employer and school must appear in the
    text, and so must each language level (or a word for "native").
-2. The page shows the parsed CV with these warnings, and the person confirms
+3. The page shows the parsed CV with these warnings, and the person confirms
    it before the agent runs.
 
 Nothing is stored: the parsed CV goes back to the browser, which sends it
@@ -43,6 +45,8 @@ Rules:
 - facts: one short sentence per concrete thing the person did or achieved in that
   job or project, close to the original wording. Keep numbers exactly as written.
 - tech: the tools and skills the text says were used in that job or project.
+  A general skills list does not say where a skill was used: its skills go to
+  other_skills, unless the job or project itself names them.
 - other_skills: only skills that no job or project lists in its tech.
 - Dates as YYYY-MM. If only the year is given, use YYYY-01. end is null if ongoing.
   start is null if the CV gives no date for that entry.
@@ -131,6 +135,41 @@ def parse_cv_text(text: str, complete: Complete) -> CV:
     raise CVParseError("Could not read the CV. Please try again or shorten the text.")
 
 
+# A line that starts like this is a general list of skills, not a job or project.
+SKILLS_LINE = re.compile(
+    r"^\W*(skills|technical skills|tech stack|tools|kenntnisse|fähigkeiten|it-kenntnisse)\b",
+    re.IGNORECASE,
+)
+
+
+def only_in_skills_list(item: str, text: str) -> bool:
+    """Whether `item` appears in the text, but only in a general skills list."""
+    lines = [line for line in text.splitlines() if _appears(item, line)]
+    return bool(lines) and all(SKILLS_LINE.match(line) for line in lines)
+
+
+def move_listed_skills(cv: CV, text: str) -> CV:
+    """Move tech that the text names only in a general skills list to other_skills.
+
+    Models tend to hand such skills to a project ("Skills: Docker" became the
+    tech of a project, seen live). The list says the person knows the skill,
+    not where it was used, so it must stay unverified.
+    """
+    moved: list[str] = []
+
+    def keep(tech: list[str]) -> list[str]:
+        listed = [t for t in tech if only_in_skills_list(t, text)]
+        moved.extend(t for t in listed if t not in moved)
+        return [t for t in tech if t not in listed]
+
+    experience = [job.model_copy(update={"tech": keep(job.tech)}) for job in cv.experience]
+    projects = [project.model_copy(update={"tech": keep(project.tech)}) for project in cv.projects]
+    others = [*cv.other_skills, *(t for t in moved if t not in cv.other_skills)]
+    return cv.model_copy(
+        update={"experience": experience, "projects": projects, "other_skills": others}
+    )
+
+
 def drop_used_skills(cv: CV, taxonomy: Taxonomy) -> CV:
     """Remove from other_skills what a job or project already uses.
 
@@ -153,9 +192,10 @@ def check_parsed(cv: CV, text: str) -> list[str]:
     """Warnings for anything in the parsed CV that the pasted text does not contain.
 
     Numbers in facts, tech items, employers, schools and language levels are
-    checked; a fact's wording may differ (it is often translated), so whole
-    facts are not compared. A school name may be translated too, so its
-    warning can be a false alarm: the person reads them all before the run.
+    checked (a tech item that only a skills list names was moved already, see
+    move_listed_skills). A fact's wording may differ (it is often translated),
+    so whole facts are not compared. A school name may be translated too, so
+    its warning can be a false alarm: the person reads them all before the run.
     """
     warnings = []
     for job in cv.experience:

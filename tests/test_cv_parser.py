@@ -15,6 +15,7 @@ from job_agent.cv_parser import (
     CVParseError,
     check_parsed,
     drop_used_skills,
+    move_listed_skills,
     parse_cv_text,
 )
 from job_agent.db import connect
@@ -258,3 +259,13 @@ def test_invalid_cv_is_refused(tmp_path: Path) -> None:
         )
     assert response.status_code == 422
     assert response.json()["detail"] == "The CV is not valid. Please read it again."
+
+
+def test_a_skill_from_the_skills_list_is_not_a_project_skill() -> None:
+    # Seen live: "Skills: Docker, Tableau" became the tech of a project.
+    moved = json.loads(json.dumps(PARSED))
+    moved["projects"][0]["tech"] += ["Docker", "Excel"]
+    moved["other_skills"] = []
+    cv = move_listed_skills(CV.model_validate(moved), CV_TEXT)
+    assert cv.projects[0].tech == ["scikit-learn"]  # named in the project line itself
+    assert cv.other_skills == ["Docker", "Excel"]  # known, but not shown to be used

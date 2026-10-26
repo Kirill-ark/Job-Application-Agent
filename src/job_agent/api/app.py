@@ -61,6 +61,7 @@ from job_agent.cv_parser import (
     CVParseError,
     check_parsed,
     drop_used_skills,
+    move_listed_skills,
     parse_cv_text,
 )
 from job_agent.db import connect, default_db_path, init_db
@@ -439,7 +440,7 @@ def create_app(
         add_parse(conn, ip_hash, now.isoformat())
         try:
             parsed = await run_in_threadpool(parse_cv_text, body.text, parse)
-            cv = drop_used_skills(parsed, taxonomy)
+            cv = drop_used_skills(move_listed_skills(parsed, body.text), taxonomy)
         except LLMError as error:  # no API key, Groq down or out of budget
             raise HTTPException(503, "Reading CVs is not available right now.") from error
         except CVParseError as error:
