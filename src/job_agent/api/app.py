@@ -26,6 +26,7 @@ retention.py (visitors' content is erased after 24 hours).
 import asyncio
 import hashlib
 import hmac
+import json
 import logging
 import os
 import secrets
@@ -57,10 +58,9 @@ from job_agent.cv_parser import (
     drop_used_skills,
     parse_cv_text,
 )
-from job_agent.db import connect, default_db_path, init_db
+from job_agent.db import REPO_ROOT, connect, default_db_path, init_db
 from job_agent.db.queries import (
     create_run,
-    demo_run_id,
     finish_run,
     get_draft,
     get_run,
@@ -75,6 +75,7 @@ from job_agent.skills import load_taxonomy
 logger = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
+DEMO_PATH = REPO_ROOT / "data" / "demo_run.json"
 FAILED_RUN = "The agent could not run. Please try again later."
 STOPPED = "Stopped by the user"
 
@@ -108,6 +109,42 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+def run_view(conn: sqlite3.Connection, run: dict[str, Any]) -> dict[str, Any]:
+    summary = run_summary(conn, run["id"])
+    for score in summary["scores"]:
+        vacancy = get_vacancy(conn, score["job_id"])
+        score["url"] = vacancy["url"] if vacancy else None
+    return {
+        **summary,
+        "goal": run["goal"],
+        "trace": run["trace"],
+        "started_at": run["started_at"],
+        "finished_at": run["finished_at"],
+    }
+
+
+def draft_view(conn: sqlite3.Connection, draft: dict[str, Any]) -> dict[str, Any]:
+    vacancy = get_vacancy(conn, draft["vacancy_id"])
+    return {
+        "draft_id": draft["id"],
+        "status": draft["status"],
+        "text": draft["text"],  # with [p1.f2] citations, for the hover hints
+        "plain_text": strip_citations(draft["text"]),
+        "edited_text": draft["edited_text"],
+        "cited_facts": draft["cited_facts"],
+        "issues": draft["issues"],
+        "vacancy": {k: vacancy[k] for k in ("id", "title", "company", "location", "url")},
+        "approvals": approval_requests(conn, draft["id"]),
+    }
+
+
+def demo_view(conn: sqlite3.Connection, run_id: int) -> dict[str, Any]:
+    """A run with its letters, as the page replays it (saved by demo.py)."""
+    run = get_run(conn, run_id)
+    letters = {d: draft_view(conn, get_draft(conn, d)) for d in created_drafts(run["trace"])}
+    return {**run_view(conn, run), "letters": letters}
+
+
 def create_app(
     db_path: Path | None = None,
     cv_path: Path = DEFAULT_CV_PATH,
@@ -116,6 +153,7 @@ def create_app(
     trust_proxy: bool = False,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     parse_llm: Complete | None = None,
+    demo_path: Path = DEMO_PATH,
 ) -> FastAPI:
     """Build the app. Tests pass a fake `agent_runner`, `parse_llm`, limits, a clock and a
     temporary database.
@@ -175,20 +213,6 @@ def create_app(
         if draft is None or draft_id not in created_drafts(run["trace"]):
             raise HTTPException(404, "Draft not found")
         return draft
-
-    def draft_view(conn: sqlite3.Connection, draft: dict[str, Any]) -> dict[str, Any]:
-        vacancy = get_vacancy(conn, draft["vacancy_id"])
-        return {
-            "draft_id": draft["id"],
-            "status": draft["status"],
-            "text": draft["text"],  # with [p1.f2] citations, for the hover hints
-            "plain_text": strip_citations(draft["text"]),
-            "edited_text": draft["edited_text"],
-            "cited_facts": draft["cited_facts"],
-            "issues": draft["issues"],
-            "vacancy": {k: vacancy[k] for k in ("id", "title", "company", "location", "url")},
-            "approvals": approval_requests(conn, draft["id"]),
-        }
 
     def client_ip(request: Request) -> str:
         forwarded = request.headers.get("x-forwarded-for")
@@ -277,19 +301,6 @@ def create_app(
             "warnings": check_parsed(cv, body.text),
         }
 
-    def run_view(conn: sqlite3.Connection, run: dict[str, Any]) -> dict[str, Any]:
-        summary = run_summary(conn, run["id"])
-        for score in summary["scores"]:
-            vacancy = get_vacancy(conn, score["job_id"])
-            score["url"] = vacancy["url"] if vacancy else None
-        return {
-            **summary,
-            "goal": run["goal"],
-            "trace": run["trace"],
-            "started_at": run["started_at"],
-            "finished_at": run["finished_at"],
-        }
-
     @app.get("/api/runs/{run_id}")
     def show_run(run_id: int, conn: Db, token: Token) -> dict[str, Any]:
         return run_view(conn, owned_run(conn, run_id, token))
@@ -312,14 +323,15 @@ def create_app(
         return run_view(conn, get_run(conn, run_id))
 
     @app.get("/api/demo")
-    def show_demo(conn: Db) -> dict[str, Any]:
-        """The saved demo run with its letters, open to everyone (it uses the example CV)."""
-        run_id = demo_run_id(conn)
-        if run_id is None:
+    def show_demo() -> dict[str, Any]:
+        """The saved demo run with its letters, open to everyone (it uses the example CV).
+
+        It is a file in the repository, not a database row: free hosting wipes
+        the disk on every restart, and the demo must still be there.
+        """
+        if not demo_path.exists():
             raise HTTPException(404, "No demo run saved")
-        run = get_run(conn, run_id)
-        letters = {d: draft_view(conn, get_draft(conn, d)) for d in created_drafts(run["trace"])}
-        return {**run_view(conn, run), "letters": letters}
+        return json.loads(demo_path.read_text(encoding="utf-8"))
 
     @app.get("/api/runs/{run_id}/drafts/{draft_id}")
     def show_draft(run_id: int, draft_id: int, conn: Db, token: Token) -> dict[str, Any]:

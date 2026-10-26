@@ -1,0 +1,10 @@
+.env
+.venv
+.venv.nosync
+.git
+**/__pycache__
+.pytest_cache
+.ruff_cache
+data/*.db*
+evals
+tests

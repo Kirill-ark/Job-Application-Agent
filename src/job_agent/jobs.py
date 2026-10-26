@@ -200,6 +200,8 @@ def search_jobs(
     Remote vacancies count as being in any location. The result is short on
     purpose: the full description stays in the database for score_match.
     """
+    # Models write "Intern" as often as "intern" (seen live); case says nothing here.
+    level = level.lower() if level is not None else None
     if level is not None and level not in LEVELS:
         raise ValueError(f"level must be one of {', '.join(LEVELS)}, not {level!r}")
     now = now or datetime.now(UTC)

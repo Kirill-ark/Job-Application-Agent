@@ -254,3 +254,10 @@ def test_level_alone_does_not_bring_in_unrelated_jobs(conn: sqlite3.Connection) 
 def test_unknown_level_is_an_error(conn: sqlite3.Connection) -> None:
     with pytest.raises(ValueError, match="level must be one of"):
         search_jobs(conn, "python", level="senior", client=FakeArbeitnow().client(), now=NOW)
+
+
+def test_level_in_any_case(conn: sqlite3.Connection) -> None:
+    # Seen live: the model wrote "Intern", got an error and searched without a city.
+    client = FakeArbeitnow().client()
+    upper = search_jobs(conn, "machine learning", level="Student", client=client, now=NOW)
+    assert ids(upper) == ids(search_jobs(conn, "machine learning", level="student", now=NOW))

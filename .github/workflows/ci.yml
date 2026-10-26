@@ -5,8 +5,27 @@ on:
   pull_request:
 
 jobs:
-  placeholder:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Lint, tests and evals will be added in step 11"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+      - run: uv sync --frozen
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Tests (no network, no LLM)
+        run: uv run pytest -q
+      # The only eval that needs no LLM. The others run by hand (evals.yml):
+      # Groq's free tier allows 200,000 tokens a day, one agent suite uses ~60,000.
+      - name: Match scoring eval
+        run: uv run python -m evals.run_evals --suite matching
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t job-agent .

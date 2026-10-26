@@ -1,14 +1,18 @@
 """Save a finished run as the demo run: python -m job_agent.api.demo RUN_ID.
 
 The page replays the demo run when a limit is reached or the LLM is down.
+It is written to data/demo_run.json, which is committed: the server's disk
+is wiped on every restart, the repository is not.
 Without RUN_ID, lists the recent finished runs to choose from.
 """
 
+import json
 import sys
 
 from dotenv import load_dotenv
 
 from job_agent.agent.loop import run_summary
+from job_agent.api.app import DEMO_PATH, demo_view
 from job_agent.db import REPO_ROOT, connect, init_db
 from job_agent.db.queries import set_demo_run
 
@@ -37,8 +41,9 @@ def main() -> None:
     summary = run_summary(conn, run_id)
     if summary["status"] != "done" or not summary["drafts"]:
         sys.exit(f"Run {run_id} is not a finished run with drafts")
-    set_demo_run(conn, run_id)
-    print(f"Run {run_id} is now the demo run")
+    set_demo_run(conn, run_id)  # keeps it in the local database too (see retention.py)
+    DEMO_PATH.write_text(json.dumps(demo_view(conn, run_id), ensure_ascii=False, indent=1) + "\n")
+    print(f"Run {run_id} is now the demo run, saved to {DEMO_PATH.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

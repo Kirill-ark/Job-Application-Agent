@@ -1,0 +1,26 @@
+name: LLM evals
+
+# Started by hand from the Actions tab: they use the free Groq budget of a day.
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "letters, agent, safety or all"
+        default: "agent"
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+      - run: uv sync --frozen
+      - run: uv run python -m evals.run_evals --suite "${{ inputs.suite }}"
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals/results/

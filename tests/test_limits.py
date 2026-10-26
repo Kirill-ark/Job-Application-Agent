@@ -1,6 +1,7 @@
 """Public demo protection: run limits, the demo run and erasing old content."""
 
 import asyncio
+import json
 import sqlite3
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -10,7 +11,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from job_agent.api.app import create_app
+from job_agent.api.app import create_app, demo_view
 from job_agent.api.limits import Limits
 from job_agent.db import connect, init_db
 from job_agent.db.queries import create_run, get_draft, get_run, set_demo_run
@@ -29,7 +30,14 @@ class Clock:
 
 
 def make_client(db_path: Path, limits: Limits, clock: Clock, agent: Any = fake_agent) -> TestClient:
-    return TestClient(create_app(db_path, agent_runner=agent, limits=limits, clock=clock))
+    app = create_app(
+        db_path,
+        agent_runner=agent,
+        limits=limits,
+        clock=clock,
+        demo_path=db_path.parent / "demo.json",
+    )
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -131,7 +139,7 @@ def test_demo_run_is_open_to_everyone(tmp_path: Path, clock: Clock) -> None:
         run_id, auth = start(client)
         wait_until_finished(client, run_id, auth)
         conn = connect(tmp_path / "t.db")
-        set_demo_run(conn, run_id)
+        (tmp_path / "demo.json").write_text(json.dumps(demo_view(conn, run_id)))  # as demo.py does
         conn.close()
         demo = client.get("/api/demo").json()  # no token needed
     assert demo["run_id"] == run_id

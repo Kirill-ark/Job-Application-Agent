@@ -1,0 +1,14 @@
+# docker compose up, then open http://localhost:8000
+# Needs a .env with GROQ_API_KEY (see .env.example).
+services:
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_PATH: data/db/job_agent.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - app-data:/app/data/db  # keeps runs and approvals across restarts
+volumes:
+  app-data:
