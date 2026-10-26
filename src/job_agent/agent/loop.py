@@ -33,9 +33,11 @@ from mcp import Client
 from job_agent.approvals import approval_requests
 from job_agent.db.queries import (
     create_run,
+    created_drafts,
     finish_run,
     get_draft,
     get_run,
+    get_vacancy,
     save_trace,
 )
 from job_agent.llm import Chat, ChatReply, InvalidToolCall, LLMError, ToolCall
@@ -145,7 +147,12 @@ def assistant_message(reply: ChatReply) -> dict[str, Any]:
 class Run:
     """One agent run: its trace and counters."""
 
-    def __init__(self, conn: sqlite3.Connection, run_id: int, on_step: Callable | None) -> None:
+    def __init__(
+        self,
+        conn: sqlite3.Connection,
+        run_id: int,
+        on_step: Callable[[dict[str, Any]], None] | None,
+    ) -> None:
         self.conn = conn
         self.run_id = run_id
         self.on_step = on_step
@@ -188,7 +195,7 @@ async def call_tool(client: Client, run: Run, names: set[str], call: ToolCall) -
         error = "The arguments are not a JSON object"
     elif call.name in NEED_SEARCH and not run.searched:
         error = "Call search_jobs first: vacancy ids come only from its results"
-    elif call.name in NEED_SEARCH and arguments.get("job_id") not in run.found:
+    elif call.name in NEED_SEARCH and str(arguments.get("job_id")) not in run.found:
         error = (
             f"Unknown vacancy {arguments.get('job_id')!r}: use an id exactly as search_jobs "
             "returned it in this run"
@@ -313,17 +320,16 @@ def run_summary(conn: sqlite3.Connection, run_id: int) -> dict[str, Any]:
     tool_steps = [s for s in run["trace"] if s["kind"] == "tool" and s["ok"]]
     scores = {s["result"]["job_id"]: s["result"] for s in tool_steps if s["tool"] == "score_match"}
     drafts = []
-    for step in tool_steps:
-        if step["tool"] != "draft_cover_letter":
-            continue
-        draft = get_draft(conn, step["result"]["draft_id"])
+    for draft_id in created_drafts(run["trace"]):
+        draft = get_draft(conn, draft_id)
+        vacancy = get_vacancy(conn, draft["vacancy_id"])
         requests = approval_requests(conn, draft["id"])
         drafts.append(
             {
                 "draft_id": draft["id"],
                 "job_id": draft["vacancy_id"],
-                "title": step["result"]["title"],
-                "company": step["result"]["company"],
+                "title": vacancy["title"],
+                "company": vacancy["company"],
                 "status": draft["status"],
                 "grounded": not draft["issues"],
                 "approval": requests[-1]["status"] if requests else None,

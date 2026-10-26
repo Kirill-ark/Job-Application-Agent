@@ -15,8 +15,9 @@ import os
 
 from dotenv import load_dotenv
 
+from job_agent import REPO_ROOT
 from job_agent.cv import DEFAULT_CV_PATH
-from job_agent.db import REPO_ROOT, default_db_path
+from job_agent.db import default_db_path
 from job_agent.letters import LETTER_SCHEMA
 from job_agent.llm import DEFAULT_LETTER_MODEL, LLMError, make_complete
 from job_agent.mcp_server.server import build_server

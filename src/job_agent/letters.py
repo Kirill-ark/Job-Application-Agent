@@ -223,10 +223,20 @@ def strip_citations(text: str) -> str:
 # The LLM
 
 
+def without_tags(text: str, tag: str) -> str:
+    """Remove <tag> and </tag> in any case, until none is left.
+
+    A stranger's text must not be able to close our delimiter. One pass is not
+    enough: removing "</vacancy>" from "</vac</vacancy>ancy>" leaves "</vacancy>".
+    """
+    pattern = re.compile(rf"<\s*/?\s*{tag}\s*>", re.IGNORECASE)
+    while pattern.search(text):
+        text = pattern.sub("", text)
+    return text
+
+
 def build_prompt(vacancy: dict[str, Any], match: dict[str, Any], cv: dict[str, Any]) -> str:
-    description = vacancy["description"][:MAX_DESCRIPTION_CHARS]
-    # The stranger's text must not be able to close our delimiter.
-    description = description.replace("<vacancy>", "").replace("</vacancy>", "")
+    description = without_tags(vacancy["description"][:MAX_DESCRIPTION_CHARS], "vacancy")
     data = {
         "candidate": {
             "name": cv["name"],

@@ -13,6 +13,7 @@ The scoring was adjusted on tune pairs only. The split is per pair, so a holdout
 | Accuracy | 77% (36/47) | 79% (23/29) | 72% (13/18) | 67% (8/12) |
 | 95% interval | 63%-86% | 62%-90% | 49%-88% | 39%-86% |
 | Balanced accuracy | 72% | 77% | 68% | 58% |
+| Recall on good | 56% | 80% | 25% | 0% |
 
 Confusion matrix (rows: hand label, columns: system label):
 
@@ -38,7 +39,7 @@ Confusion matrix (rows: hand label, columns: system label):
 | Junior Data Analyst (m/w/d) | jonas | maybe | bad | 29 | data role in Berlin, but a full-time junior position and Tableau is missing |
 | Praktikum Anwendungsentwicklung (w/m/d) | jonas | maybe | bad | 19 | development internship in Berlin, German is fine, but the stack (JavaScript, PHP) is not in the CV |
 
-_Ran at 2026-10-26T13:01:28+00:00._
+_Ran at 2026-10-26T13:14:30+00:00._
 
 ## Cover letter groundedness
 
@@ -55,6 +56,7 @@ _Ran at 2026-10-26T13:01:28+00:00._
 
 Rules compared with the judge:
 
+- first attempts the rules sent back for a repair: n/a of 8 letters (n/a problems); the numbers below are about the final, repaired letters
 - flagged by the rules: 0, of which the judge also found a problem in 0
 - false alarms (rules flagged, judge says supported): 0
 - missed by the rules (judge found a problem): 6
@@ -73,6 +75,8 @@ Rules compared with the judge:
 _Ran at 2026-10-25T21:14:04+00:00._
 
 ## Tool use
+
+_Measured before the fix for made-up ids (offering id tools only after a search); to be measured again._
 
 4 full agent runs on the frozen vacancies. Finished: 3 of 4. **Without any tool-use mistake: 3 of 4.** Mean 11,762 tokens and 79 s per run.
 

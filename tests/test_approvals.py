@@ -102,7 +102,8 @@ def test_sending_is_refused_and_logged(conn: sqlite3.Connection, action: str) ->
     assert result["message"] == REFUSAL
     assert pending_requests(conn) == []  # nothing for the human to approve
     row = conn.execute("SELECT action, event FROM approvals").fetchone()
-    assert (row["action"], row["event"]) == (action, "refused")
+    # The permanent log keeps a fixed word, not the agent's free text.
+    assert (row["action"], row["event"]) == ("other", "refused")
 
 
 def test_refused_request_cannot_be_approved(conn: sqlite3.Connection) -> None:
@@ -259,8 +260,8 @@ def test_two_decisions_at_once_are_an_approval_error(
         decide(conn, request["request_id"], "rejected")
 
 
-def test_refused_action_names_are_cut_short(conn: sqlite3.Connection) -> None:
+def test_refused_actions_keep_no_free_text(conn: sqlite3.Connection) -> None:
     draft_id = make_draft(conn)
-    result = request_approval(conn, "send " + "my whole CV text " * 20, draft_id)
+    result = request_approval(conn, "send to maria@example.com +49 170 1234567", draft_id)
     assert result["status"] == "refused"
-    assert len(result["action"]) == 30
+    assert result["action"] == "other"

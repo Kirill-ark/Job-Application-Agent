@@ -9,7 +9,8 @@ import os
 import sqlite3
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parents[3]
+from job_agent import REPO_ROOT
+
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 

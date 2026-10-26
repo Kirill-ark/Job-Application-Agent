@@ -150,7 +150,8 @@ def build_server(
             "facts": cv["facts"],
         }
 
-    @server.tool(annotations=READ_ONLY)
+    # Not read-only: results are cached in the database. Nothing outside changes.
+    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, openWorldHint=False))
     def score_match(job_id: str) -> dict[str, Any]:
         """Score how well one vacancy fits the CV, from 0 to 100.
 

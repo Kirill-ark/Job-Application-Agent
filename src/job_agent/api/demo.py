@@ -11,10 +11,11 @@ import sys
 
 from dotenv import load_dotenv
 
+from job_agent import REPO_ROOT
 from job_agent.agent.loop import run_summary
 from job_agent.api.app import DEMO_PATH, demo_view
-from job_agent.db import REPO_ROOT, connect, init_db
-from job_agent.db.queries import set_demo_run
+from job_agent.db import connect, init_db
+from job_agent.db.queries import get_run, recent_finished_runs, set_demo_run
 
 
 def main() -> None:
@@ -22,10 +23,7 @@ def main() -> None:
     conn = connect()
     init_db(conn)
     if len(sys.argv) < 2:
-        rows = conn.execute(
-            "SELECT id, started_at, goal FROM runs WHERE status = 'done' ORDER BY id DESC LIMIT 10"
-        ).fetchall()
-        for row in rows:
+        for row in recent_finished_runs(conn):
             summary = run_summary(conn, row["id"])
             print(
                 f"{row['id']:>4}  {row['started_at'][:16]}  {len(summary['scores'])} scores, "
@@ -33,7 +31,7 @@ def main() -> None:
             )
         return
     run_id = int(sys.argv[1])
-    run = conn.execute("SELECT own_cv FROM runs WHERE id = ?", (run_id,)).fetchone()
+    run = get_run(conn, run_id)
     if run and run["own_cv"]:
         sys.exit(
             f"Run {run_id} used a visitor's CV: the demo is public, so it must use the example"

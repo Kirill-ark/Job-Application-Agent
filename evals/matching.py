@@ -18,6 +18,13 @@ def accuracy(rows: list[dict[str, Any]]) -> float | None:
     return sum(r["expected"] == r["predicted"] for r in rows) / len(rows) if rows else None
 
 
+def balanced(rows: list[dict[str, Any]]) -> float | None:
+    """Mean recall over the labels that occur: an always-"bad" system gets 1/3,
+    while its plain accuracy would look good because most pairs are bad."""
+    recalls = [v for v in recall_by_label(rows).values() if v is not None]
+    return sum(recalls) / len(recalls) if recalls else None
+
+
 def interval(rows: list[dict[str, Any]]) -> tuple[float, float] | None:
     """95% Wilson interval of the accuracy: with 18 pairs, 72% means "somewhere
     between about 50% and 88%", and the report should say so."""
@@ -75,7 +82,6 @@ def run() -> dict[str, Any]:
     # the clean ones are on vacancies the tuning never saw.
     tuned_vacancies = {r["vacancy"] for r in splits["tune"]}
     splits["clean holdout"] = [r for r in splits["holdout"] if r["vacancy"] not in tuned_vacancies]
-    labels = list(LABELS)
     return {
         "pairs": len(rows),
         "counts": {name: len(part) for name, part in splits.items()},
@@ -85,13 +91,9 @@ def run() -> dict[str, Any]:
         },
         "accuracy": {name: accuracy(part) for name, part in splits.items()},
         "interval": {name: interval(part) for name, part in splits.items()},
-        # Mean recall over the three labels: an always-"bad" system would get 1/3,
-        # while its plain accuracy would look good because most pairs are bad.
-        "balanced_accuracy": {
-            name: sum(v for v in recall_by_label(part).values() if v is not None) / len(labels)
-            for name, part in splits.items()
-        },
+        "balanced_accuracy": {name: balanced(part) for name, part in splits.items()},
         "recall": recall_by_label(rows),
+        "recall_by_split": {name: recall_by_label(part) for name, part in splits.items()},
         "confusion": confusion(rows),
         "misses": [r for r in rows if r["expected"] != r["predicted"]],
         "rows": rows,

@@ -30,7 +30,6 @@ from job_agent.db.queries import (
 from job_agent.letters import strip_citations
 
 ACTIONS = ("mark_ready", "export")
-MAX_ACTION_CHARS = 30
 REFUSAL = (
     "Refused: the agent never sends anything or contacts anyone. "
     "Allowed actions are mark_ready and export; the user sends the letter themselves."
@@ -73,8 +72,9 @@ def request_approval(
                 conn,
                 {
                     "draft_id": draft_id,
-                    # The log is kept forever, so free text from the agent is cut short.
-                    "action": action[:MAX_ACTION_CHARS],
+                    # The log is kept forever and is never erased, so the agent's
+                    # free text (it could hold CV data) is not stored, only "other".
+                    "action": "other",
                     "event": "refused",
                     "comment": REFUSAL,
                     "created_at": _now(now),

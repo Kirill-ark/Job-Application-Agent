@@ -28,15 +28,32 @@ def test_matching_suite_runs_and_adds_up() -> None:
     assert len(result["misses"]) == result["pairs"] - result["correct"]["all"]
     clean = result["counts"]["clean holdout"]
     assert 0 < clean < result["counts"]["holdout"]
-    low, high = result["interval"]["holdout"]
-    assert low < result["accuracy"]["holdout"] < high
+    assert result["interval"]["holdout"] == pytest.approx((0.491, 0.875), abs=1e-3)  # 13/18
 
 
 def test_matching_results_in_the_repo_are_current() -> None:
     # The scoring is deterministic: a change to it must come with fresh results,
     # or README and latest.md would show numbers the code no longer gives.
     saved = json.loads((report.RESULTS / "latest.json").read_text())["matching"]
-    assert matching.run()["accuracy"] == saved["accuracy"]
+    fresh = matching.run()
+    assert fresh["rows"] == saved["rows"] and fresh["accuracy"] == saved["accuracy"]
+
+
+def test_latest_md_is_what_the_report_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # "Do not edit by hand": the markdown must follow from the saved JSON.
+    saved = (report.RESULTS / "latest.json").read_text()
+    committed = (report.RESULTS / "latest.md").read_text()
+    monkeypatch.setattr(report, "RESULTS", tmp_path)
+    (tmp_path / "latest.json").write_text(saved)
+    report.write({})
+    assert (tmp_path / "latest.md").read_text() == committed
+
+
+def test_balanced_accuracy_ignores_labels_without_pairs() -> None:
+    rows = [{"expected": "bad", "predicted": "bad"}, {"expected": "good", "predicted": "bad"}]
+    assert matching.balanced(rows) == 0.5  # (1 + 0) / 2, not / 3
 
 
 def test_report_is_written(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

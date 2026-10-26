@@ -12,6 +12,7 @@ be turned back into the IP without the salt.
 
 import hashlib
 import hmac
+import ipaddress
 import logging
 import os
 import secrets
@@ -43,9 +44,10 @@ class Limits:
     # Groq's free tier gives the agent model 200,000 tokens per day and a run costs
     # 10,000-23,000, so about 10 runs a day for everyone fit (found by the evals).
     runs_per_day: int = 10
-    # A CV read costs up to 2 x 7,000 tokens of the letter model.
-    parses_per_ip_per_day: int = 10
-    parses_per_day: int = 30
+    # A CV read costs up to 2 x 7,000 tokens of the letter model, which also writes
+    # every run's letters (~15,000-20,000 a run): 5 reads leave room for 10 runs.
+    parses_per_ip_per_day: int = 3
+    parses_per_day: int = 5
     salt: str = ""
 
     @classmethod
@@ -54,15 +56,27 @@ class Limits:
         if not salt:
             logger.warning("IP_HASH_SALT is not set: using a random one, limits reset on restart")
             salt = secrets.token_hex(16)
+
+        def setting(name: str, default: int) -> int:
+            return int(os.environ.get(name) or default)
+
         return cls(
-            runs_per_ip_per_day=int(os.environ.get("RUNS_PER_IP_PER_DAY", "3")),
-            runs_per_day=int(os.environ.get("RUNS_PER_DAY", "10")),
-            parses_per_ip_per_day=int(os.environ.get("PARSES_PER_IP_PER_DAY", "10")),
-            parses_per_day=int(os.environ.get("PARSES_PER_DAY", "30")),
+            runs_per_ip_per_day=setting("RUNS_PER_IP_PER_DAY", cls.runs_per_ip_per_day),
+            runs_per_day=setting("RUNS_PER_DAY", cls.runs_per_day),
+            parses_per_ip_per_day=setting("PARSES_PER_IP_PER_DAY", cls.parses_per_ip_per_day),
+            parses_per_day=setting("PARSES_PER_DAY", cls.parses_per_day),
             salt=salt,
         )
 
     def hash_ip(self, ip: str) -> str:
+        """HMAC of the visitor's IP. An IPv6 user owns a whole /64 network and
+        could take a new address for every run, so IPv6 counts per /64."""
+        try:
+            address = ipaddress.ip_address(ip)
+        except ValueError:
+            address = None
+        if address is not None and address.version == 6:
+            ip = str(ipaddress.ip_network(f"{ip}/64", strict=False))
         return hmac.new(self.salt.encode(), ip.encode(), hashlib.sha256).hexdigest()
 
     def refusal(self, conn: sqlite3.Connection, ip_hash: str, now: datetime) -> str | None:

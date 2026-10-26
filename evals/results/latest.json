@@ -48,6 +48,28 @@
    "maybe": 0.75,
    "bad": 0.8461538461538461
   },
+  "recall_by_split": {
+   "all": {
+    "good": 0.5555555555555556,
+    "maybe": 0.75,
+    "bad": 0.8461538461538461
+   },
+   "tune": {
+    "good": 0.8,
+    "maybe": 0.625,
+    "bad": 0.875
+   },
+   "holdout": {
+    "good": 0.25,
+    "maybe": 1.0,
+    "bad": 0.8
+   },
+   "clean holdout": {
+    "good": 0.0,
+    "maybe": 1.0,
+    "bad": 0.75
+   }
+  },
   "confusion": {
    "good": {
     "good": 5,
@@ -997,7 +1019,7 @@
     "why": "experienced data scientist role"
    }
   ],
-  "ran_at": "2026-10-26T13:01:28+00:00"
+  "ran_at": "2026-10-26T13:14:30+00:00"
  },
  "letters": {
   "letters": 8,
@@ -2045,6 +2067,7 @@
   "total": 4,
   "mean_tokens": 11762,
   "mean_seconds": 79,
-  "ran_at": "2026-10-26T12:23:47+00:00"
+  "ran_at": "2026-10-26T12:23:47+00:00",
+  "note": "Measured before the fix for made-up ids (offering id tools only after a search); to be measured again."
  }
 }

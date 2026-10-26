@@ -8,9 +8,10 @@ from typing import Any
 import anyio
 from dotenv import load_dotenv
 
+from job_agent import REPO_ROOT
 from job_agent.agent.runner import run_with_server
 from job_agent.cv import DEFAULT_CV_PATH
-from job_agent.db import REPO_ROOT, connect, default_db_path, init_db
+from job_agent.db import connect, default_db_path, init_db
 from job_agent.llm import make_chat
 
 DEFAULT_GOAL = (

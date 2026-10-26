@@ -341,3 +341,23 @@ def test_a_too_long_cv_is_refused(client: TestClient) -> None:
     response = client.post("/api/runs", json={"goal": "Find ML jobs", "cv": cv})
     assert response.status_code == 422
     assert response.json()["detail"] == "The CV is too long."
+
+
+def test_a_chunked_body_is_limited_too(client: TestClient) -> None:
+    # No Content-Length: the size is only known while reading.
+    def chunks() -> Iterator[bytes]:
+        for _ in range(30):
+            yield b"x" * 10_000
+
+    response = client.post(
+        "/api/runs", content=chunks(), headers={"Content-Type": "application/json"}
+    )
+    assert response.status_code == 413
+
+
+def test_a_body_that_is_not_json_is_refused(client: TestClient) -> None:
+    # What a "no-cors" request from another site would send.
+    response = client.post(
+        "/api/runs", content=b'{"goal": "Find ML jobs"}', headers={"Content-Type": "text/plain"}
+    )
+    assert response.status_code == 415

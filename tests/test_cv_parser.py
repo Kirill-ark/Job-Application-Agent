@@ -209,8 +209,9 @@ def test_parse_errors(tmp_path: Path) -> None:
 
 
 def test_parse_limit_per_ip(tmp_path: Path) -> None:
-    with make_client(tmp_path / "t.db", FakeParser(*[PARSED] * 11)) as client:
-        for _ in range(10):
+    per_ip = Limits().parses_per_ip_per_day
+    with make_client(tmp_path / "t.db", FakeParser(*[PARSED] * (per_ip + 1))) as client:
+        for _ in range(per_ip):
             assert client.post("/api/cv/parse", json={"text": CV_TEXT}).status_code == 200
         refused = client.post("/api/cv/parse", json={"text": CV_TEXT})
     assert refused.status_code == 429

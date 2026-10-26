@@ -58,7 +58,7 @@ For matching, the holdout is the honest number, and it is small: 18 pairs, so th
 
 ## Error Analysis
 
-**Matching** is best at rejecting bad fits (85% recall on "bad") and weakest at recognizing good ones (56% recall on "good"). Two good pairs score 64, one point under the threshold. Others are roles whose ads name few skills from the vocabulary, so the skill overlap stays low even when the role fits. It also only understands German language requirements: a Dutch-only internship scores "maybe".
+**Matching** is best at rejecting bad fits (85% recall on "bad") and weakest at recognizing good ones: 56% recall on "good" overall, and only 1 of 4 good pairs in the holdout (0 of 2 in the clean holdout). It errs on the side of "maybe", which still shows a vacancy to the user, but it is the clearest weakness. Two good pairs score 64, one point under the threshold. Others are roles whose ads name few skills from the vocabulary, so the skill overlap stays low even when the role fits. It also only understands German language requirements: a Dutch-only internship scores "maybe".
 
 **Letters** used to embellish: "robust pipelines", "production-grade models", "fluent" for a C1 level. The rules could not catch this, because they check skills and numbers, not wording. Banning judging words and requiring exact CV language levels cut unbacked sentences from 16% to 9%. What remains are mild interpretations, plus one real gap: a claim phrased as a general sentence cites no fact, so the rules do not check it. The rules themselves work before a letter is saved: a letter they flag goes back to the model for one repair, which is why the final letters in the eval show almost no rule flags.
 
@@ -79,11 +79,12 @@ For matching, the holdout is the honest number, and it is small: 18 pairs, so th
 
 ## Limitations
 
-- **Small, not fully independent evals.** The match labels follow a rubric with the same factors the score uses (field, level, location, language, skills), and 7 of 30 vacancies are synthetic, so accuracy shows how well the code follows the rubric more than real-world usefulness. The tune/holdout split is per pair, and holdout misses were visible in the first report. A clean test would need vacancies labelled by someone who has not seen the rubric.
+- **Small, not fully independent evals.** The match labels follow a rubric with the same factors the score uses (field, level, location, language, skills), and 5 of 30 vacancies are synthetic, so accuracy shows how well the code follows the rubric more than real-world usefulness. The tune/holdout split is per pair, and holdout misses were visible in the first report. A clean test would need vacancies labelled by someone who has not seen the rubric.
 - **Letters were measured once before and once after the fixes**, on 8 cases that were also used to choose the fixes. There is no letter holdout, and the judge's agreement with a person was not measured: its verdicts were read by hand instead.
 - **The CV parser** warns about tech items, numbers, employers, schools and language levels that are not in the pasted text, but not about invented wording inside a fact. The person confirms the parsed CV before the run.
 - **Groq's free tier** allows 200,000 tokens per model per day, and a run costs 10,000-23,000. That is why the demo has a daily cap and why the LLM evals run by hand, not on every push.
 - **Free hosting wipes the disk on restart.** The demo run is therefore a committed file (`data/demo_run.json`), and runs, limits and approvals start fresh after a restart.
+- **The demo is easy to use up.** A few visitors (or one with a few addresses) can take the 10 runs of a day, and a run holds the one-run-at-a-time lock for up to 10 minutes. That is the price of a free LLM budget; the saved demo run is shown instead.
 - **SQLite calls run on the server's event loop.** At demo scale (one run at a time) this is not noticeable; with more traffic they would move to a thread or to Postgres.
 - One job source (Arbeitnow), letters in English only, and only German is understood as a language requirement.
 
@@ -98,7 +99,7 @@ For matching, the holdout is the honest number, and it is small: 18 pairs, so th
 | Backend | FastAPI, uvicorn, pydantic, httpx |
 | Frontend | one HTML page, plain JavaScript and CSS |
 | Storage | SQLite |
-| Quality | pytest (219 tests, no network, no LLM), ruff, eval suite with LLM judge |
+| Quality | pytest (no network, no LLM), ruff, eval suite with LLM judge |
 | Delivery | Docker, docker compose, GitHub Actions, Render |
 
 ---
@@ -119,6 +120,8 @@ Job-Application-Agent/
       demo.py           # saves a finished run as the demo replay
       static/           # the web page
     db/                 # schema.sql (with the append-only approval log) and queries
+    llm.py              # Groq client: completions, tool-calling chat, short safe errors
+    skills.py           # the skill vocabulary and its synonyms
     jobs.py             # Arbeitnow client, local search, cache
     matching.py         # deterministic match score 0-100
     letters.py          # letter prompt, citations, rule-based groundedness checks
@@ -187,10 +190,12 @@ It serves the CV from `CV_PATH` in `.env` (the example CV by default). Approving
 
 ## API
 
+Every `/api/runs/{id}/...` route needs the run's token in the `X-Run-Token` header and answers 404 without it.
+
 | Method | Path | What it does |
 |---|---|---|
 | POST | `/api/runs` | starts the agent with `{"goal": "...", "cv": {...}?}`; returns `run_id` and a `token` |
-| GET | `/api/runs/{id}` | progress: status, trace, scores, drafts (needs `X-Run-Token`) |
+| GET | `/api/runs/{id}` | progress: status, trace, scores, drafts |
 | POST | `/api/runs/{id}/cancel` | stops a run that is going |
 | GET | `/api/runs/{id}/drafts/{draft_id}` | one letter with its cited facts and rule issues |
 | POST | `/api/runs/{id}/drafts/{draft_id}/decision` | a person approves (optionally with edits) or rejects |

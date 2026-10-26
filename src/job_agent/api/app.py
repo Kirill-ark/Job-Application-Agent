@@ -8,6 +8,7 @@
     POST /api/runs/{run_id}/cancel                 the human stops a run that is going
     GET  /api/demo                                 the saved demo run, shown when a limit is hit
     POST /api/cv/parse                             a pasted CV as the agent will see it
+    GET  /api/health                               {"status": "ok"}
 
 The agent runs in the background; the page asks for progress every second.
 
@@ -24,6 +25,7 @@ retention.py (visitors' content is erased after 24 hours).
 """
 
 import asyncio
+import functools
 import hashlib
 import hmac
 import json
@@ -44,7 +46,9 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
+from starlette.concurrency import run_in_threadpool
 
+from job_agent import REPO_ROOT
 from job_agent.agent.loop import run_summary
 from job_agent.agent.runner import run_with_server
 from job_agent.api.limits import MAX_RUN_TIME, MESSAGES, Limits
@@ -59,7 +63,7 @@ from job_agent.cv_parser import (
     drop_used_skills,
     parse_cv_text,
 )
-from job_agent.db import REPO_ROOT, connect, default_db_path, init_db
+from job_agent.db import connect, default_db_path, init_db
 from job_agent.db.queries import (
     add_parse,
     create_run,
@@ -167,6 +171,123 @@ def demo_view(conn: sqlite3.Connection, run_id: int) -> dict[str, Any]:
     return {**run_view(conn, run), "letters": letters}
 
 
+# Helpers of the routes below
+
+
+def owned_run(conn: sqlite3.Connection, run_id: int, token: str) -> dict[str, Any]:
+    """The run, if `token` is its token. The same 404 for "no such run" and
+    "wrong token", so trying ids reveals nothing."""
+    run = get_run(conn, run_id)
+    if run is None or not run["token_hash"]:
+        raise HTTPException(404, "Run not found")
+    if not hmac.compare_digest(run["token_hash"], hash_token(token)):
+        raise HTTPException(404, "Run not found")
+    return run
+
+
+def owned_draft(conn: sqlite3.Connection, run_id: int, draft_id: int, token: str) -> dict[str, Any]:
+    """The draft, if the run of `token` created it."""
+    run = owned_run(conn, run_id, token)
+    draft = get_draft(conn, draft_id)
+    if draft is None or draft_id not in created_drafts(run["trace"]):
+        raise HTTPException(404, "Draft not found")
+    return draft
+
+
+_proxy_logged: list[bool] = []  # filled after the first request
+
+
+def client_ip(request: Request, trusted_proxies: int) -> str:
+    """The visitor's IP. Behind `trusted_proxies` proxies it is the entry of
+    X-Forwarded-For that the farthest of them added; entries left of it were
+    sent by the visitor and can be anything."""
+    # All header lines: a proxy may add its own line instead of extending the visitor's.
+    header = ",".join(request.headers.getlist("x-forwarded-for"))
+    forwarded = [ip.strip() for ip in header.split(",")]
+    if trusted_proxies and not _proxy_logged:
+        # Once, to check TRUSTED_PROXIES after a deploy. No addresses, only the count.
+        logger.warning(
+            "X-Forwarded-For has %d entries (TRUSTED_PROXIES=%d)", len(forwarded), trusted_proxies
+        )
+        _proxy_logged.append(True)
+    if trusted_proxies and len(forwarded) >= trusted_proxies and forwarded[-1]:
+        return forwarded[-trusted_proxies]
+    return request.client.host if request.client else "unknown"
+
+
+def has_body(request: Request) -> bool:
+    headers = request.headers
+    return headers.get("content-length", "0") != "0" or "transfer-encoding" in headers
+
+
+async def guard(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """Middleware: refuse what no page request looks like, add the security headers.
+
+    A request with a body must say it is JSON: a form or a "no-cors" request
+    from another site cannot, so other sites cannot start runs from their
+    visitors' browsers.
+    """
+    size = request.headers.get("content-length")
+    if size and (not size.isdigit() or int(size) > MAX_BODY_BYTES):
+        response: Response = JSONResponse({"detail": "The request is too large"}, 413)
+    elif has_body(request) and not request.headers.get("content-type", "").startswith(
+        "application/json"
+    ):
+        response = JSONResponse({"detail": "Send JSON"}, 415)
+    else:
+        response = await call_next(request)
+    response.headers.update(SECURITY_HEADERS)
+    return response
+
+
+class LimitBody:
+    """ASGI middleware: read at most MAX_BODY_BYTES of a request body.
+
+    The Content-Length check in `guard` is not enough: a chunked request has no
+    Content-Length. So the body is read here first, refused once it is too
+    large, and then handed to the app as if it came from the network.
+    """
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: dict, receive: Callable, send: Callable) -> None:
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        body, more = b"", True
+        while more:
+            message = await receive()
+            if message["type"] != "http.request":  # the client went away
+                return
+            body += message.get("body", b"")
+            more = message.get("more_body", False)
+            if len(body) > MAX_BODY_BYTES:
+                response = JSONResponse({"detail": "The request is too large"}, 413)
+                response.headers.update(SECURITY_HEADERS)
+                return await response(scope, receive, send)
+        replayed = False
+
+        async def replay() -> dict:
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return await receive()  # after the body: wait for a disconnect
+
+        await self.app(scope, replay, send)
+
+
+@functools.cache
+def parse_complete() -> Complete:
+    """The LLM that reads pasted CVs; made on first use, so tests need no API key."""
+    model = os.environ.get("GROQ_LETTER_MODEL") or DEFAULT_LETTER_MODEL
+    return make_complete(4000, CV_SCHEMA, model=model)
+
+
+def real_parse_llm(system: str, user: str) -> str:
+    return parse_complete()(system, user)
+
+
 def create_app(
     db_path: Path | None = None,
     cv_path: Path = DEFAULT_CV_PATH,
@@ -181,9 +302,8 @@ def create_app(
     temporary database.
 
     `trusted_proxies`: how many proxies in front of the app add themselves to
-    X-Forwarded-For (1 on Render). The visitor's IP is the entry that the
-    farthest of them added; entries left of it were sent by the visitor and
-    can be anything. 0 means no proxy: the IP of the connection is used.
+    X-Forwarded-For (1 on Render; see client_ip). 0 means no proxy: the IP of
+    the connection is used.
     """
     db_path = db_path or default_db_path()
     limits = limits or Limits.from_env()
@@ -202,14 +322,6 @@ def create_app(
             await run_with_server(goal, run_cv_path, db_path, conn, chat, run_id)
         finally:
             await chat.aclose()
-
-    letter_complete: list[Complete] = []  # made on first use: tests run without an API key
-
-    def real_parse_llm(system: str, user: str) -> str:
-        if not letter_complete:
-            model = os.environ.get("GROQ_LETTER_MODEL") or DEFAULT_LETTER_MODEL
-            letter_complete.append(make_complete(4000, CV_SCHEMA, model=model))
-        return letter_complete[0](system, user)
 
     runner = agent_runner or real_agent
     parse = parse_llm or real_parse_llm
@@ -235,15 +347,8 @@ def create_app(
     app = FastAPI(title="Job Application Agent", lifespan=lifespan)
     app.state.tasks = {}  # run_id -> background task: keeps it alive, and lets it be stopped
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-    @app.middleware("http")
-    async def guard(request: Request, call_next: Callable) -> Response:
-        size = request.headers.get("content-length")
-        if size and (not size.isdigit() or int(size) > MAX_BODY_BYTES):
-            return JSONResponse({"detail": "The request is too large"}, status_code=413)
-        response = await call_next(request)
-        response.headers.update(SECURITY_HEADERS)
-        return response
+    app.middleware("http")(guard)
+    app.add_middleware(LimitBody)
 
     def database() -> Iterator[sqlite3.Connection]:
         conn = connect(db_path, any_thread=True)
@@ -255,34 +360,12 @@ def create_app(
     Db = Annotated[sqlite3.Connection, Depends(database)]
     Token = Annotated[str, Header(alias="X-Run-Token")]
 
-    def owned_run(conn: sqlite3.Connection, run_id: int, token: str) -> dict[str, Any]:
-        run = get_run(conn, run_id)
-        # The same 404 for "no such run" and "wrong token": ids reveal nothing.
-        if run is None or not run["token_hash"]:
-            raise HTTPException(404, "Run not found")
-        if not hmac.compare_digest(run["token_hash"], hash_token(token)):
-            raise HTTPException(404, "Run not found")
-        return run
-
-    def owned_draft(
-        conn: sqlite3.Connection, run_id: int, draft_id: int, token: str
-    ) -> dict[str, Any]:
-        run = owned_run(conn, run_id, token)
-        draft = get_draft(conn, draft_id)
-        if draft is None or draft_id not in created_drafts(run["trace"]):
-            raise HTTPException(404, "Draft not found")
-        return draft
-
-    def client_ip(request: Request) -> str:
-        forwarded = [ip.strip() for ip in request.headers.get("x-forwarded-for", "").split(",")]
-        if trusted_proxies and len(forwarded) >= trusted_proxies and forwarded[-1]:
-            return forwarded[-trusted_proxies]
-        return request.client.host if request.client else "unknown"
-
     async def run_in_background(goal: str, run_id: int, cv: CV | None) -> None:
         conn = connect(db_path)
         # A visitor's CV lives in a temporary file for this run only.
         folder = Path(tempfile.mkdtemp(prefix=CV_FOLDER_PREFIX)) if cv else None
+        error = FAILED_RUN  # used only if the run did not finish itself
+        limit = None
         try:
             run_cv_path = cv_path
             if folder and cv:
@@ -290,13 +373,12 @@ def create_app(
                 run_cv_path.write_text(yaml.safe_dump(cv.model_dump()), encoding="utf-8")
             # Ends the run itself, not only its claim on the one-run-at-a-time
             # lock (which other runs stop respecting after MAX_RUN_TIME).
-            async with asyncio.timeout(MAX_RUN_TIME.total_seconds()):
+            async with asyncio.timeout(MAX_RUN_TIME.total_seconds()) as limit:
                 await runner(goal, run_id, conn, run_cv_path)
         except TimeoutError:
-            logger.warning("Run %s took too long", run_id)
-            run = get_run(conn, run_id)
-            if run and run["status"] == "running":
-                finish_run(conn, run_id, "failed", _now(), error=TOO_LONG)
+            # Our limit, or a timeout inside the run (a network call, say).
+            logger.warning("Run %s timed out", run_id)
+            error = TOO_LONG if limit.expired() else FAILED_RUN
         except Exception:
             # Also a tool server that does not start, or no LLM key.
             logger.exception("Run %s crashed", run_id)
@@ -305,7 +387,7 @@ def create_app(
                 shutil.rmtree(folder, ignore_errors=True)
             run = get_run(conn, run_id)
             if run and run["status"] == "running":
-                finish_run(conn, run_id, "failed", _now(), error=FAILED_RUN)
+                finish_run(conn, run_id, "failed", _now(), error=error)
             conn.close()
 
     @app.get("/", include_in_schema=False)
@@ -320,7 +402,7 @@ def create_app(
     async def start_run(body: RunRequest, request: Request, conn: Db) -> dict[str, Any]:
         now = clock()
         redact_old_runs(conn, now)
-        ip_hash = limits.hash_ip(client_ip(request))
+        ip_hash = limits.hash_ip(client_ip(request, trusted_proxies))
         # No await between the check and create_run, so two requests cannot both pass.
         reason = limits.refusal(conn, ip_hash, now)
         if reason:
@@ -344,17 +426,20 @@ def create_app(
         return {"run_id": run_id, "token": token}
 
     @app.post("/api/cv/parse")
-    def parse_cv(body: ParseRequest, request: Request, conn: Db) -> dict[str, Any]:
+    async def parse_cv(body: ParseRequest, request: Request, conn: Db) -> dict[str, Any]:
         """Read a pasted CV with the LLM. Nothing is stored: the browser keeps the result."""
         now = clock()
-        ip_hash = limits.hash_ip(client_ip(request))
+        ip_hash = limits.hash_ip(client_ip(request, trusted_proxies))
+        # No await between the check and add_parse, so a burst of requests cannot
+        # all pass the check (the LLM call itself runs in a thread below).
         reason = limits.parse_refusal(conn, ip_hash, now)
         if reason:
             raise HTTPException(429, {"reason": reason, "message": MESSAGES[reason]})
         # Counted before the call: a failed read used tokens too.
         add_parse(conn, ip_hash, now.isoformat())
         try:
-            cv = drop_used_skills(parse_cv_text(body.text, parse), taxonomy)
+            parsed = await run_in_threadpool(parse_cv_text, body.text, parse)
+            cv = drop_used_skills(parsed, taxonomy)
         except LLMError as error:  # no API key, Groq down or out of budget
             raise HTTPException(503, "Reading CVs is not available right now.") from error
         except CVParseError as error:

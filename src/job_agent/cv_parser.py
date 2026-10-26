@@ -22,7 +22,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from job_agent.cv import CV
-from job_agent.letters import numbers_in
+from job_agent.letters import numbers_in, without_tags
 from job_agent.llm import Complete, LLMError
 from job_agent.skills import Taxonomy
 
@@ -113,7 +113,7 @@ def parse_cv_text(text: str, complete: Complete) -> CV:
     if len(text) > MAX_CV_CHARS:
         raise CVParseError(f"The CV text is too long (at most {MAX_CV_CHARS:,} characters)")
     # The pasted text must not be able to close our delimiter.
-    user = "<cv>\n" + text.replace("<cv>", "").replace("</cv>", "") + "\n</cv>"
+    user = "<cv>\n" + without_tags(text, "cv") + "\n</cv>"
     prompt = user
     llm_error = None
     for _ in range(MAX_ATTEMPTS):

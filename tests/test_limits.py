@@ -333,3 +333,28 @@ def test_a_run_that_takes_too_long_is_stopped(
         run = wait_until_finished(client, run_id, auth)
     assert run["status"] == "failed"
     assert run["error"] == "The run took too long and was stopped"
+
+
+def test_an_ipv6_user_counts_per_network() -> None:
+    limits = Limits(salt="s")
+    same_network = limits.hash_ip("2001:db8:1:2::1") == limits.hash_ip("2001:db8:1:2:ffff::9")
+    other_network = limits.hash_ip("2001:db8:1:2::1") == limits.hash_ip("2001:db8:1:3::1")
+    assert same_network and not other_network
+    assert limits.hash_ip("203.0.113.7") != limits.hash_ip("203.0.113.8")  # IPv4 per address
+
+
+def test_a_second_forwarded_header_line_counts(tmp_path: Path, clock: Clock) -> None:
+    # A proxy may add its own X-Forwarded-For line instead of extending the visitor's.
+    from starlette.requests import Request
+
+    from job_agent.api.app import client_ip
+
+    scope = {
+        "type": "http",
+        "headers": [
+            (b"x-forwarded-for", b"198.51.100.1"),  # written by the visitor
+            (b"x-forwarded-for", b"203.0.113.7"),  # added by the proxy
+        ],
+        "client": ("10.0.0.1", 1234),
+    }
+    assert client_ip(Request(scope), trusted_proxies=1) == "203.0.113.7"

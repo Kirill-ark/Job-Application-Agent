@@ -1,7 +1,9 @@
 """The agent loop with a scripted LLM and the real MCP server in memory."""
 
+import asyncio
 import json
 import sqlite3
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -11,6 +13,7 @@ from mcp import Client
 from mcp.server.mcpserver import MCPServer
 
 from job_agent.agent.loop import MAX_LETTERS, MAX_STEPS, run_agent
+from job_agent.agent.runner import run_with_server
 from job_agent.cv import DEFAULT_CV_PATH
 from job_agent.db import connect, init_db
 from job_agent.db.queries import get_run
@@ -332,3 +335,31 @@ async def test_rejected_calls_in_a_row_stop_the_run(
     summary = await run(server, conn, ScriptedLLM(InvalidToolCall("bad")))
     assert summary["status"] == "failed"
     assert summary["error"] == "Stopped after 3 invalid or failed steps in a row"
+
+
+async def test_an_id_that_is_not_text_is_a_tool_error(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    llm = ScriptedLLM(calls(SEARCH), calls(("score_match", {"job_id": ["a", "b"]})), final("Done"))
+    summary = await run(server, conn, llm)
+    assert summary["status"] == "done"
+    error = [m for m in llm.requests[2] if m["role"] == "tool"][1]["content"]
+    assert error.startswith("ERROR: Unknown vacancy")
+
+
+async def test_the_run_timeout_stops_a_real_tool_server(db_path: Path) -> None:
+    # The web app ends a run with asyncio.timeout; the MCP client (anyio inside)
+    # must let that cancel through instead of keeping the run alive.
+    class SlowLLM:
+        async def __call__(self, messages: Any, tools: Any) -> ChatReply:
+            await asyncio.sleep(30)
+            raise AssertionError("not reached")
+
+    conn = connect(db_path)
+    init_db(conn)
+    started = time.monotonic()
+    with pytest.raises(TimeoutError):
+        async with asyncio.timeout(1):
+            await run_with_server("Find ML jobs", DEFAULT_CV_PATH, db_path, conn, SlowLLM())
+    conn.close()
+    assert time.monotonic() - started < 10

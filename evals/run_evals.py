@@ -11,7 +11,7 @@ import argparse
 from dotenv import load_dotenv
 
 from evals import agent, letters, matching, report
-from job_agent.db import REPO_ROOT
+from job_agent import REPO_ROOT
 
 SUITES = {
     "matching": matching.run,

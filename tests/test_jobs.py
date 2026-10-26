@@ -261,3 +261,21 @@ def test_level_in_any_case(conn: sqlite3.Connection) -> None:
     client = FakeArbeitnow().client()
     upper = search_jobs(conn, "machine learning", level="Student", client=client, now=NOW)
     assert ids(upper) == ids(search_jobs(conn, "machine learning", level="student", now=NOW))
+
+
+@pytest.mark.parametrize(
+    "broken",
+    [
+        {"company_name": None},  # would break NOT NULL for the whole batch
+        {"tags": None},  # would break every later search
+        {"url": "javascript:alert(1)"},  # would become a clickable link
+        {"created_at": None},
+    ],
+)
+def test_a_malformed_job_is_skipped(conn: sqlite3.Connection, broken: dict[str, Any]) -> None:
+    pages = json.loads(json.dumps(PAGES))
+    pages[0]["data"][0].update(broken)
+    pages[0]["data"].append("not a job at all")
+    results = search_jobs(conn, "machine learning", client=FakeArbeitnow(pages).client(), now=NOW)
+    assert "werkstudent-machine-learning-acme-1" not in ids(results)  # the broken one
+    assert results  # the others are found

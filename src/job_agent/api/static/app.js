@@ -11,10 +11,14 @@ const CITATION = /\s*\[((?:p|e|ed|lang)\d+(?:\.f\d+)?|sk|av)((?:,\s*(?:(?:p|e|ed
 let current = null; // {runId, token}
 let openDraft = null; // the draft shown in the letter view
 let demo = null; // the saved demo run while it is being shown
-let lastRun = null; // the last run this browser started, kept in localStorage
+// The last run this tab started. Kept in sessionStorage, not localStorage: it
+// holds the token to letters from a CV, and it should not outlive the tab on
+// a shared computer.
+let lastRun = null;
 let parsedCv = null; // the visitor's CV as read by the LLM
 let confirmedCv = null; // ... once the visitor confirmed it
-let pollTimer = null; // the one pending poll, so there is never a second loop
+let pollTimer = null; // the pending poll
+let pollLoop = 0; // a new number for every new loop: an older loop stops at its next step
 let pollFailures = 0;
 
 const $ = (id) => document.getElementById(id);
@@ -41,9 +45,7 @@ async function api(path, options = {}) {
     const detail = body.detail || `Request failed (${response.status})`;
     // A string, our {reason, message}, or FastAPI's list of input errors.
     const message = typeof detail === "string" ? detail : detail.message || "Please check your input.";
-    const error = new Error(message);
-    error.reason = detail.reason; // busy, ip_limit, daily_limit
-    throw error;
+    throw new Error(message);
   }
   return body;
 }
@@ -68,7 +70,7 @@ $("run-form").addEventListener("submit", async (event) => {
     current = { runId: run.run_id, token: run.token };
     lastRun = current;
     showLastRunLink(true); // the new run is on screen: the link can hide it
-    try { localStorage.setItem("lastRun", JSON.stringify(current)); } catch {}
+    try { sessionStorage.setItem("lastRun", JSON.stringify(current)); } catch {}
     leaveDemo();
     closeLetter();
     $("output").hidden = false;
@@ -101,37 +103,37 @@ $("stop-run").addEventListener("click", async () => {
 function startPolling() {
   clearTimeout(pollTimer);
   pollFailures = 0;
-  poll();
+  poll(++pollLoop);
 }
 
-async function poll() {
+async function poll(loop) {
   pollTimer = null;
   const polled = current;
-  if (!polled) return;
+  if (!polled || loop !== pollLoop) return;
   let run;
   try {
     run = await api(`/api/runs/${polled.runId}`);
   } catch (error) {
-    if (current !== polled) return; // another run is shown now
+    if (current !== polled || loop !== pollLoop) return; // another loop or run took over
     if (error.message === "Run not found") {
       current = null;
       lastRun = null;
       $("last-run").hidden = true;
-      try { localStorage.removeItem("lastRun"); } catch {}
+      try { sessionStorage.removeItem("lastRun"); } catch {}
       $("output").hidden = true;
       $("run-button").disabled = false;
     } else if (++pollFailures < MAX_POLL_FAILURES) {
-      pollTimer = setTimeout(poll, POLL_MS * pollFailures); // a network hiccup: wait longer each time
+      pollTimer = setTimeout(() => poll(loop), POLL_MS * pollFailures); // a hiccup: wait longer each time
     } else {
       showNotice("Lost the connection to the server. Reload the page to see the run.");
       $("run-button").disabled = false;
     }
     return;
   }
-  if (current !== polled) return;
+  if (current !== polled || loop !== pollLoop) return;
   pollFailures = 0;
   showRun(run);
-  if (run.status === "running") pollTimer = setTimeout(poll, POLL_MS);
+  if (run.status === "running") pollTimer = setTimeout(() => poll(loop), POLL_MS);
   else $("run-button").disabled = false;
   // A run the user stopped needs no "could not finish" notice.
   const stoppedByUser = run.trace.some((s) => s.kind === "stopped");
@@ -152,6 +154,7 @@ async function watchDemo() {
   }
   current = null;
   clearTimeout(pollTimer);
+  pollLoop++; // a poll still waiting for the server stops too
   demo = saved;
   $("run-button").disabled = false; // also when the demo replaced a run that was going
   showLastRunLink(false); // the demo replaces the last run on screen
@@ -646,7 +649,7 @@ $("confirm-cv").addEventListener("click", () => {
 // The page opens empty. If this browser started a run before, a link shows it,
 // and the same link hides it again.
 try {
-  lastRun = JSON.parse(localStorage.getItem("lastRun") || "null");
+  lastRun = JSON.parse(sessionStorage.getItem("lastRun") || "null");
 } catch {}
 $("last-run").hidden = !lastRun;
 
@@ -660,6 +663,7 @@ $("last-run").addEventListener("click", () => {
   if (runIsShown) {
     current = null;
     clearTimeout(pollTimer);
+    pollLoop++;
     closeLetter();
     $("output").hidden = true;
     $("run-button").disabled = false;

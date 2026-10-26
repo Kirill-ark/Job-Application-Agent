@@ -11,7 +11,9 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-DEFAULT_SKILLS_PATH = Path(__file__).parents[2] / "data" / "skills.yaml"
+from job_agent import REPO_ROOT
+
+DEFAULT_SKILLS_PATH = REPO_ROOT / "data" / "skills.yaml"
 
 Category = Literal["programming", "ml", "data", "web", "devops", "tools"]
 

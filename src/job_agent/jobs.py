@@ -90,7 +90,15 @@ def normalize_arbeitnow(raw: dict[str, Any], fetched_at: str) -> dict[str, Any]:
     The URL becomes a link on the page, so only https links are accepted
     (a "javascript:" URL would run code when clicked).
     """
-    if not str(raw["url"]).startswith("https://"):
+    for key in ("slug", "title", "company_name", "url", "description"):
+        if not isinstance(raw.get(key), str) or not raw[key].strip():
+            raise ValueError(f"{key} is missing or not text")
+    if not isinstance(raw.get("location"), str):  # empty for remote jobs
+        raise ValueError("location is not text")
+    for key in ("tags", "job_types"):
+        if not isinstance(raw.get(key), list):
+            raise ValueError(f"{key} is not a list")
+    if not raw["url"].startswith("https://"):
         raise ValueError(f"not an https URL: {raw['url']!r}")
     return {
         "id": raw["slug"],
@@ -131,9 +139,10 @@ def refresh_cache(conn: sqlite3.Connection, client: httpx.Client, now: datetime)
     for raw in fetch_arbeitnow(client):
         try:
             vacancies.append(normalize_arbeitnow(raw, fetched_at))
-        except (KeyError, TypeError, ValueError) as error:
+        except (AttributeError, KeyError, TypeError, ValueError) as error:
             # One broken job must not stop the search for all the others.
-            log.warning("Skipping a malformed job %r: %s", raw.get("slug"), error)
+            slug = raw.get("slug") if isinstance(raw, dict) else None
+            log.warning("Skipping a malformed job %r: %s", slug, error)
     upsert_vacancies(conn, vacancies)
     return len(vacancies)
 
@@ -144,7 +153,7 @@ def _ensure_fresh_cache(conn: sqlite3.Connection, client: httpx.Client, now: dat
         return
     try:
         refresh_cache(conn, client, now)
-    except JobSourceError as error:
+    except (JobSourceError, sqlite3.Error) as error:
         if last is None:
             raise  # nothing cached, nothing to fall back to
         # The old cache is better than no answer.

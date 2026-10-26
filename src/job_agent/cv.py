@@ -16,7 +16,7 @@ from typing import Annotated, Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationError
 
-from job_agent.db import REPO_ROOT
+from job_agent import REPO_ROOT
 from job_agent.skills import Taxonomy, load_taxonomy
 
 DEFAULT_CV_PATH = REPO_ROOT / "data" / "cv.yaml"
@@ -87,7 +87,7 @@ def load_cv(path: Path = DEFAULT_CV_PATH) -> CV:
 
 def _period(start: str | None, end: str | None) -> str:
     if start is None:
-        return "dates not given"
+        return f"until {end}" if end else "dates not given"
     return f"{start} - {end or 'present'}"
 
 

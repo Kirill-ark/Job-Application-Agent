@@ -150,3 +150,10 @@ def test_example_cv_loads_and_every_skill_is_in_the_vocabulary() -> None:
     taxonomy = load_taxonomy()
     assert result["skills"]["scikit-learn"]["evidence"] == ["p2"]
     assert taxonomy.category("scikit-learn") == "ml"
+
+
+def test_an_entry_with_only_an_end_date_keeps_it() -> None:
+    from job_agent.cv import _period
+
+    assert _period(None, "2023-05") == "until 2023-05"
+    assert _period(None, None) == "dates not given"

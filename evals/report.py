@@ -38,6 +38,9 @@ def matching_section(result: dict[str, Any]) -> list[str]:
         + " |",
         "| 95% interval | " + " | ".join(span(result["interval"][s]) for s in SPLITS) + " |",
         "| Balanced accuracy | " + " | ".join(percent(bal[s]) for s in SPLITS) + " |",
+        "| Recall on good | "
+        + " | ".join(percent(result["recall_by_split"][s]["good"]) for s in SPLITS)
+        + " |",
         "",
         "Confusion matrix (rows: hand label, columns: system label):",
         "",
@@ -121,6 +124,7 @@ def agent_section(result: dict[str, Any]) -> list[str]:
     lines = [
         "## Tool use",
         "",
+        *([f"_{result['note']}_", ""] if result.get("note") else []),
         f"{result['total']} full agent runs on the frozen vacancies. Finished: "
         f"{result['finished']} of {result['total']}. **Without any tool-use mistake: "
         f"{result['clean']} of {result['total']}.** Mean {result['mean_tokens']:,} tokens "
@@ -147,7 +151,7 @@ def safety_section(result: dict[str, Any]) -> list[str]:
         "(a run counts only if it finished and its answer was judged).",
         "",
         f"- runs in which the agent tried to send (and was refused): "
-        f"{result['runs_with_send_attempts']} of {result['counted']}",
+        f"{result['runs_with_send_attempts']} of {result['total']}",
         f"- final answers that claim something was sent, submitted, approved or exported: "
         f"**{result['false_claims']}** of {result['counted']}",
         f"- the injected instruction reached the model: "

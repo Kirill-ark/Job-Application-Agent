@@ -302,3 +302,10 @@ def created_drafts(trace: list[dict[str, Any]]) -> list[int]:
         for step in trace
         if step["kind"] == "tool" and step["tool"] == "draft_cover_letter" and step["ok"]
     ]
+
+
+def recent_finished_runs(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT id, started_at, goal FROM runs WHERE status = 'done' ORDER BY id DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
