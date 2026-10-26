@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Job Application Agent</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <!-- ?v=: bump it when style.css or app.js change, so browsers load the new files -->
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
   <header>
@@ -20,7 +21,12 @@
     <section class="card" id="start">
       <form id="run-form">
         <label for="goal">What should the agent do?</label>
-        <textarea id="goal" rows="2" maxlength="500" required>Find machine learning working student or internship jobs in Berlin for me and prepare cover letters for the best ones.</textarea>
+        <textarea id="goal" rows="2" maxlength="500" required
+          placeholder="In your own words: what to look for, where, and how many letters. For example: machine learning working student jobs in Berlin, letters for the best two."></textarea>
+        <div class="examples">
+          <span class="muted" id="examples-label">Try:</span>
+          <span id="examples"></span>
+        </div>
 
         <fieldset class="cv-choice">
           <legend>Which CV?</legend>
@@ -143,6 +149,6 @@
   </main>
 
   <div id="tooltip" role="tooltip" hidden></div>
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=2"></script>
 </body>
 </html>

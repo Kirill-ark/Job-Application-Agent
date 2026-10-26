@@ -564,6 +564,59 @@ async function withButtons(action) {
   }
 }
 
+// Example goals under the goal field. Clicking one fills in the goal; the
+// visitor can still change it. They show what the agent can be asked for
+// (a letter limit, no letters, a goal in German), the same goals as the evals.
+
+const EXAMPLE_GOALS = [
+  ["ML working student in Berlin", "Find machine learning working student or internship jobs in Berlin for me and prepare cover letters for the best ones."],
+  ["Data engineering, 2 letters only", "Find data engineering internships or working student jobs in Berlin and write cover letters for the best two only."],
+  ["Only score, no letters", "Score machine learning working student jobs in Berlin for me. Do not write any cover letters."],
+  ["Auf Deutsch", "Finde Werkstudentenjobs im Bereich Machine Learning in Berlin für mich und bereite Anschreiben für die besten vor."],
+];
+
+// What a CV is about, from words in its headline (first match wins).
+const FIELDS = [
+  [/machine learning|\bml\b|\bai\b|artificial intelligence|deep learning/i, "machine learning"],
+  [/data engineer/i, "data engineering"],
+  [/data scien|analytics|data analy/i, "data science"],
+  [/backend|software|computer science|informatik/i, "software engineering"],
+  [/frontend|web/i, "web development"],
+];
+
+// Example goals for the visitor's own CV: its city, field and level.
+function goalsFromCv(cv) {
+  const city = cv.location || "Germany";
+  const field = (FIELDS.find(([pattern]) => pattern.test(cv.headline || "")) || [null, ""])[1];
+  const levels = cv.looking_for || [];
+  const level = levels.includes("student") ? "working student"
+    : levels.includes("intern") ? "internship"
+    : levels.includes("entry") ? "junior" : "";
+  const what = [field, level].filter(Boolean).join(" ") || "jobs that fit my CV";
+  const jobs = what.endsWith("jobs that fit my CV") ? what : `${what} jobs`;
+  return [
+    [`${what} in ${city}`, `Find ${jobs} in ${city} for me and prepare cover letters for the best ones.`],
+    [`${city}, 1 letter only`, `Find ${jobs} in ${city} and write a cover letter for the best one only.`],
+    ["Only score, no letters", `Score ${jobs} in ${city} for me. Do not write any cover letters.`],
+  ];
+}
+
+function showExamples() {
+  const own = usingOwnCv() && confirmedCv;
+  const goals = own ? goalsFromCv(confirmedCv) : EXAMPLE_GOALS;
+  $("examples-label").textContent = own ? "From your CV:" : "Try:";
+  $("examples").replaceChildren(
+    ...goals.map(([label, goal]) => {
+      const button = el("button", { type: "button", text: label, title: goal });
+      button.addEventListener("click", () => {
+        $("goal").value = goal;
+        $("goal").focus();
+      });
+      return button;
+    }),
+  );
+}
+
 // The visitor's own CV: paste, read with the LLM, check, confirm.
 
 function usingOwnCv() {
@@ -581,6 +634,7 @@ for (const radio of document.querySelectorAll('input[name="cv"]')) {
     $("own-cv").hidden = !usingOwnCv();
     $("cv-review").hidden = !usingOwnCv() || !parsedCv;
     showCvLabel();
+    showExamples();
   });
 }
 
@@ -590,6 +644,7 @@ $("cv-text").addEventListener("input", () => {
     confirmedCv = null;
     showCvConfirmed();
     showCvLabel();
+    showExamples();
   }
 });
 
@@ -643,6 +698,7 @@ $("confirm-cv").addEventListener("click", () => {
   confirmedCv = parsedCv;
   showCvConfirmed();
   showCvLabel();
+  showExamples();
   $("start").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -652,6 +708,7 @@ try {
   lastRun = JSON.parse(sessionStorage.getItem("lastRun") || "null");
 } catch {}
 $("last-run").hidden = !lastRun;
+showExamples();
 
 function showLastRunLink(runIsShown) {
   $("last-run").hidden = !lastRun;
