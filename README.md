@@ -2,11 +2,19 @@
 
 A tool-using AI agent that finds AI/ML working student and internship roles in Berlin, scores them against a CV and drafts cover letters grounded in that CV. Its tools run in an MCP server, it is served through FastAPI with a single web page, and nothing leaves the system without a human approving it.
 
+[![CI](https://github.com/Kirill-ark/Job-Application-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Kirill-ark/Job-Application-Agent/actions/workflows/ci.yml)
+![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB)
+[![License: MIT](https://img.shields.io/badge/license-MIT-555)](LICENSE)
+
 **Live demo:** https://job-application-agent-f2mr.onrender.com (free hosting: after 15 minutes without visitors the first page load takes about a minute)
 
 ---
 
 ## Screenshots
+
+<p align="center">
+  <img src="screenshots/demo.gif" width="90%" alt="The saved demo run replayed: the agent reads the CV, searches, scores 8 vacancies and drafts 2 letters; then a letter shows the CV fact behind each sentence" />
+</p>
 
 <p align="center">
   <img src="screenshots/run.png" width="32%" alt="A run: the agent's steps, scored vacancies and drafted letters" />
@@ -29,14 +37,16 @@ What makes it more than a prompt around an API:
 - **Letters cite their facts.** Every claim in a letter names the CV facts it is based on. Rules check the skills and numbers of each sentence against those facts and send a failing letter back to the model once for a repair.
 - **Measured, not just demoed.** An eval suite measures match scoring, letter groundedness, tool use and safety. [evals/NOTES.md](evals/NOTES.md) records what failed and how it was fixed.
 
-```
-Browser  ->  FastAPI  ->  agent loop (LLM + tool calling, limits, trace)
-                               |  MCP over stdio, one server per run
-                               v
-                          MCP server
-          read_cv  search_jobs  score_match  draft_cover_letter  request_approval
-                               |
-                            SQLite  (vacancies, scores, drafts, approval log, runs)
+```mermaid
+flowchart LR
+    user([Person in the browser]) -->|goal, CV| api[FastAPI<br/>limits, run token]
+    api --> loop[Agent loop<br/>Groq tool calling,<br/>step and letter limits, trace]
+    loop <-->|MCP over stdio,<br/>one server per run| mcp[MCP server]
+    mcp --> tools[read_cv · search_jobs · score_match<br/>draft_cover_letter · request_approval]
+    tools --> db[(SQLite<br/>vacancies, scores, drafts,<br/>runs, approval log)]
+    tools -.-> board[Arbeitnow job board]
+    user -->|approve, edit, export| api
+    api -->|human decisions only| db
 ```
 
 **Human in the loop.** The agent cannot send anything, and it has no tool to approve anything. Each draft goes into an approval queue. A person reads it on the page, optionally edits it, and approves or rejects it. Only an approved letter can be exported. Approve and export are reachable only through the web API, never as agent tools. Every decision is written to an append-only log, and database triggers refuse updates and deletes on it.
@@ -75,7 +85,6 @@ For matching, the holdout is the honest number, and it is small: 18 pairs, so th
 - **Two models.** The agent uses `qwen/qwen3.8-27b`, which can make several tool calls in one step. Letters are written by `openai/gpt-oss-120b`. Groq limits tokens per model, so two models double the budget of a run. The judge comes from another model family than the writer.
 - **SQLite.** One file holds the vacancy cache, scores, drafts, runs and the approval log. The web app and the MCP server share it in WAL mode.
 - **Demo protection.** One run at a time, 3 runs per IP and 10 runs a day in total, which fits the free LLM limits; reading pasted CVs has its own caps. IPs are stored only as an HMAC. Each run's letters can be read only with that run's random token, and the agent's tools only reach drafts of their own run. Visitors' content is erased after 24 hours. When a limit is hit, the page replays a saved real run instead of failing.
-- **Code review.** Before publishing, four review agents (correctness, security, tests and evals, readability) read the whole repo; every finding was fixed or is listed under Limitations. They found, among others, that one MCP tool could reach other visitors' drafts, that the per-IP limit trusted a header the visitor controls, and that the prompt-injection eval hid the instruction where the agent never saw it.
 
 ---
 
@@ -89,6 +98,25 @@ For matching, the holdout is the honest number, and it is small: 18 pairs, so th
 - **The demo is easy to use up.** A few visitors (or one with a few addresses) can take the 10 runs of a day, and a run holds the one-run-at-a-time lock for up to 10 minutes. That is the price of a free LLM budget; the saved demo run is shown instead.
 - **SQLite calls run on the server's event loop.** At demo scale (one run at a time) this is not noticeable; with more traffic they would move to a thread or to Postgres.
 - One job source (Arbeitnow), letters in English only, and only German is understood as a language requirement.
+
+---
+
+## Review Notes
+
+Before publishing, four review agents read the whole repository, each with one focus: correctness, security, tests and evals, and readability for a reviewer. Each reported concrete findings with file and line; all of them were fixed, then a second pass of the same four agents checked the fixes and found smaller issues, which were fixed too. The main ones:
+
+| Area | Found | Changed |
+|---|---|---|
+| Security | The `request_approval` tool accepted any draft id, so a run could read sentences of another visitor's letter | The tool server only accepts drafts it wrote in this run |
+| Security | The per-IP limit took the first X-Forwarded-For entry, which the visitor writes | The IP is counted from the right, after the proxies (measured on Render: 3 entries) |
+| Security | The body size limit only read Content-Length; a chunked request skipped it | The body is counted while it is read |
+| Security | CV reading had no daily cap for everyone, and a burst of requests could pass the per-IP check | Caps in SQLite, checked and counted without a gap |
+| Correctness | A run could outlive the one-run-at-a-time lock; a broken tool server or one malformed job crashed a run or the search | Hard run timeout; tool failures and bad jobs become errors the agent can read |
+| Evals | The prompt-injection case hid the instruction past the 150 characters the agent sees | The instruction comes first, and the suite checks that the model read it |
+| Evals | Holdout accuracy was presented without its size | Counts, a 95% interval and a holdout of vacancies never tuned on |
+| Readability | Stale comments, dead code, a 270-line app factory | Cleaned up, helpers moved out of the factory |
+
+Testing the live demo found one more: the CV parser credited skills from a general "Skills:" line to a project. Code now keeps such skills unverified.
 
 ---
 

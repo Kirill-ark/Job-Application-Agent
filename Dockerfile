@@ -9,7 +9,7 @@ RUN useradd --create-home --uid 1000 app
 WORKDIR /app
 
 # Dependencies first: this layer is rebuilt only when the lock file changes.
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock README.md LICENSE ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY src ./src
