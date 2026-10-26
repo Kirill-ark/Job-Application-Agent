@@ -3,7 +3,7 @@
 import asyncio
 import sqlite3
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -105,20 +105,33 @@ def client(db_path: Path) -> Iterator[TestClient]:
         yield client
 
 
-def start(client: TestClient, goal: str = "Find ML jobs in Berlin") -> tuple[int, dict[str, str]]:
-    response = client.post("/api/runs", json={"goal": goal})
+def start(
+    client: TestClient, goal: str = "Find ML jobs in Berlin", headers: dict[str, str] | None = None
+) -> tuple[int, dict[str, str]]:
+    response = client.post("/api/runs", json={"goal": goal}, headers=headers)
     assert response.status_code == 201
     body = response.json()
     return body["run_id"], {"X-Run-Token": body["token"]}
 
 
-def wait_until_finished(client: TestClient, run_id: int, auth: dict[str, str]) -> dict[str, Any]:
-    for _ in range(100):
-        run = client.get(f"/api/runs/{run_id}", headers=auth).json()
-        if run["status"] != "running":
-            return run
+def wait_for(condition: Callable[[], Any], what: str, timeout: float = 10) -> Any:
+    """Check until `condition` returns something true. The background task runs in
+    another thread; a long timeout keeps a slow CI machine from failing the test."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        result = condition()
+        if result:
+            return result
         time.sleep(0.02)
-    raise AssertionError("the run did not finish")
+    raise AssertionError(f"timed out waiting for {what}")
+
+
+def wait_until_finished(client: TestClient, run_id: int, auth: dict[str, str]) -> dict[str, Any]:
+    def finished() -> dict[str, Any] | None:
+        run = client.get(f"/api/runs/{run_id}", headers=auth).json()
+        return run if run["status"] != "running" else None
+
+    return wait_for(finished, "the run to finish")
 
 
 def draft_url(run_id: int, draft_id: int, action: str = "") -> str:
@@ -277,15 +290,11 @@ def test_stop_a_running_run(db_path: Path) -> None:
 
     with TestClient(create_app(db_path, agent_runner=slow_agent, limits=ROOMY)) as client:
         run_id, auth = start(client)
-        for _ in range(100):  # until the draft is there
-            if client.get(f"/api/runs/{run_id}", headers=auth).json()["drafts"]:
-                break
-            time.sleep(0.02)
+        wait_for(
+            lambda: client.get(f"/api/runs/{run_id}", headers=auth).json()["drafts"], "the draft"
+        )
         stopped = client.post(f"/api/runs/{run_id}/cancel", headers=auth).json()
-        for _ in range(100):
-            if reached:
-                break
-            time.sleep(0.02)
+        wait_for(lambda: reached, "the task to be cancelled")
         later = client.get(f"/api/runs/{run_id}", headers=auth).json()
 
     assert stopped["status"] == "failed"
@@ -309,3 +318,26 @@ def test_stopping_a_finished_run_changes_nothing(client: TestClient) -> None:
     stopped = client.post(f"/api/runs/{run_id}/cancel", headers=auth).json()
     assert stopped["status"] == "done"
     assert all(step["kind"] != "stopped" for step in stopped["trace"])
+
+
+# Protection of the API itself
+
+
+def test_security_headers(client: TestClient) -> None:
+    headers = client.get("/").headers
+    assert "frame-ancestors 'none'" in headers["content-security-policy"]
+    assert headers["x-content-type-options"] == "nosniff"
+
+
+def test_too_large_requests_are_refused(client: TestClient) -> None:
+    response = client.post(
+        "/api/runs", content=b"x" * 200_000, headers={"Content-Type": "application/json"}
+    )
+    assert response.status_code == 413
+
+
+def test_a_too_long_cv_is_refused(client: TestClient) -> None:
+    cv = {"name": "x", "headline": "x", "location": "x", "other_skills": ["y" * 30_000]}
+    response = client.post("/api/runs", json={"goal": "Find ML jobs", "cv": cv})
+    assert response.status_code == 422
+    assert response.json()["detail"] == "The CV is too long."

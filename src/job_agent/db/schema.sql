@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS runs (
     id          INTEGER PRIMARY KEY,
     goal        TEXT NOT NULL,
     status      TEXT NOT NULL DEFAULT 'running'
-                CHECK (status IN ('running', 'done', 'failed', 'limited')),
+                CHECK (status IN ('running', 'done', 'failed')),
     ip_hash     TEXT,                           -- hash, never the raw IP
     token_hash  TEXT,                           -- hash of the browser's secret for this run
     trace       TEXT NOT NULL DEFAULT '[]',     -- JSON: list of steps
@@ -99,3 +99,10 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 
 CREATE INDEX IF NOT EXISTS runs_by_ip ON runs (ip_hash, started_at);
+
+-- CVs read by the LLM, for the parse limits. Deleted after a day (retention.py).
+CREATE TABLE IF NOT EXISTS cv_parses (
+    id          INTEGER PRIMARY KEY,
+    ip_hash     TEXT NOT NULL,
+    created_at  TEXT NOT NULL
+);

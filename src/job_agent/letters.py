@@ -257,11 +257,18 @@ def repair_prompt(prompt: str, answer: str, problems: list[str]) -> str:
 
 
 def write_letter(
-    prompt: str, cv: dict[str, Any], taxonomy: Taxonomy, title: str, complete: Complete
+    prompt: str,
+    cv: dict[str, Any],
+    taxonomy: Taxonomy,
+    title: str,
+    complete: Complete,
+    attempts: list[list[dict[str, str]]] | None = None,
 ) -> tuple[Letter, list[dict[str, str]]]:
     """Ask for a letter, check it, ask for one repair if needed.
 
-    Returns the letter with the fewest problems and those problems.
+    Returns the letter with the fewest problems and those problems. The evals
+    pass `attempts` to see the problems of every attempt: the final letter has
+    been repaired already, so it alone hides what the rules caught.
     """
     best: tuple[Letter, list[dict[str, str]]] | None = None
     user = prompt
@@ -281,6 +288,8 @@ def write_letter(
             user = repair_prompt(prompt, answer, ["the answer is not valid JSON in the schema"])
             continue
         issues = check_letter(letter, cv, taxonomy, title)
+        if attempts is not None:
+            attempts.append(issues)
         if best is None or len(issues) < len(best[1]):
             best = (letter, issues)
         if not issues:

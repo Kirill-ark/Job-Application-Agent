@@ -21,7 +21,7 @@ from tests.test_mcp_server import JOB, fake_letter
 
 pytestmark = pytest.mark.anyio
 
-OTHER_JOB = "ai-research-intern-delta-4"
+OTHER_JOB = "backend-engineer-eta-7"  # also found by SEARCH
 
 
 @pytest.fixture
@@ -162,13 +162,62 @@ async def test_letter_limit(server: MCPServer, conn: sqlite3.Connection) -> None
 async def test_tool_error_goes_back_to_the_llm(server: MCPServer, conn: sqlite3.Connection) -> None:
     llm = ScriptedLLM(
         calls(SEARCH),
-        calls(("score_match", {"job_id": "made-up-id"})),
+        calls(("request_approval", {"action": "mark_ready", "draft_id": 99})),
         final("Done"),
     )
     summary = await run(server, conn, llm)
     assert summary["status"] == "done"
     error = [m for m in llm.requests[2] if m["role"] == "tool"][1]["content"]
-    assert error.startswith("ERROR: Error executing tool score_match: Unknown vacancy")
+    assert error.startswith("ERROR: Error executing tool request_approval: Unknown draft")
+
+
+async def test_ids_must_come_from_a_search_of_this_run(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    # In the cache, but this run's search (Berlin) did not return it; seen live as
+    # ids copied with a typo, which the tool server alone would also refuse.
+    llm = ScriptedLLM(
+        calls(SEARCH),
+        calls(("score_match", {"job_id": "senior-machine-learning-engineer-beta-2"})),
+        final("Done"),
+    )
+    summary = await run(server, conn, llm)
+    error = [m for m in llm.requests[2] if m["role"] == "tool"][1]["content"]
+    assert error.startswith("ERROR: Unknown vacancy 'senior-machine-learning-engineer-beta-2'")
+    assert summary["scores"] == []
+
+
+async def test_a_search_with_no_results_does_not_unlock_scoring(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    nothing = ("search_jobs", {"query": "underwater basket weaving"})
+    llm = ScriptedLLM(calls(nothing), final("Nothing found."))
+    await run(server, conn, llm)
+    assert "score_match" not in llm.offered[1]
+
+
+class BrokenToolServer:
+    """A client whose tool server died: listing works, every call fails."""
+
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    async def list_tools(self) -> Any:
+        return await self.client.list_tools()
+
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> Any:
+        raise RuntimeError("the server process is gone")
+
+
+async def test_a_broken_tool_server_is_a_failed_call_not_a_crash(
+    server: MCPServer, conn: sqlite3.Connection
+) -> None:
+    llm = ScriptedLLM(calls(("read_cv", {})), final("I could not read the CV."))
+    async with Client(server) as client:
+        summary = await run_agent("Find ML jobs", BrokenToolServer(client), llm, conn)
+    assert summary["status"] == "done"
+    error = [m for m in llm.requests[1] if m["role"] == "tool"][0]["content"]
+    assert error == "ERROR: The tool failed: RuntimeError"
 
 
 async def test_id_tools_are_offered_only_after_a_search(

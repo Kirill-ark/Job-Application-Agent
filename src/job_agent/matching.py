@@ -12,8 +12,8 @@ Hybrid by design:
 - The LLM only writes a short explanation of that score. If the LLM is not
   available, a template writes it instead, so scoring never fails.
 
-The floors, smoothing and thresholds are starting values; the evals in step 10 tune them
-against hand-labeled vacancies.
+The floors, smoothing and thresholds were tuned on the tune split of the
+hand-labelled pairs in evals/; evals/NOTES.md says what changed and why.
 """
 
 import hashlib

@@ -122,8 +122,9 @@ def letter_rows(
     """Write one letter and judge it: one row per sentence."""
     vacancy = get_vacancy(conn, case["vacancy"])
     match = score_match(conn, case["vacancy"], cv, taxonomy)
+    attempts: list[list[dict[str, str]]] = []
     letter, _ = write_letter(
-        build_prompt(vacancy, match, cv), cv, taxonomy, vacancy["title"], writer
+        build_prompt(vacancy, match, cv), cv, taxonomy, vacancy["title"], writer, attempts
     )
     verdicts = judge(letter, cv, vacancy, judge_llm)
     sentences = [s for paragraph in letter.paragraphs for s in paragraph]
@@ -136,6 +137,8 @@ def letter_rows(
             "rule_problems": check_sentence(sentence, cv, taxonomy, vacancy["title"]),
             "verdict": verdict["verdict"],
             "reason": verdict["reason"],
+            # Problems the rules found in the first attempt, before the repair.
+            "first_attempt_problems": len(attempts[0]) if attempts else 0,
         }
         for sentence, verdict in zip(sentences, verdicts, strict=True)
     ]
@@ -148,6 +151,7 @@ def summarize(rows: list[dict[str, Any]], letters: int, failed: list[str]) -> di
         return count / total if total else None
 
     judged_bad = [r for r in rows if r["verdict"] in NOT_IN_CV]
+    first_attempts = {r["case"]: r.get("first_attempt_problems", 0) for r in rows}
     flagged = [r for r in rows if r["rule_problems"]]
     return {
         "letters": letters,
@@ -159,6 +163,10 @@ def summarize(rows: list[dict[str, Any]], letters: int, failed: list[str]) -> di
         "letters_without_hallucination": letters - len({r["case"] for r in judged_bad}),
         # The rules compared with the judge, sentence by sentence.
         "rules": {
+            # The final letters are already repaired, so few flags remain there;
+            # what the rules did is seen in the first attempts.
+            "repaired_letters": sum(n > 0 for n in first_attempts.values()),
+            "first_attempt_problems": sum(first_attempts.values()),
             "flagged": len(flagged),
             "caught": sum(r["verdict"] in NOT_IN_CV for r in flagged),
             "false_alarms": [r for r in flagged if r["verdict"] == "supported"],

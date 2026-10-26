@@ -5,22 +5,29 @@ on:
   workflow_dispatch:
     inputs:
       suite:
-        description: "letters, agent, safety or all"
-        default: "agent"
+        description: "Which suite"
+        type: choice
+        options: [agent, safety, letters, all]
+        default: agent
+
+permissions:
+  contents: read
 
 jobs:
   evals:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           version: "0.13.5"
       - run: uv sync --frozen
-      - run: uv run python -m evals.run_evals --suite "${{ inputs.suite }}"
+      # The input goes through an environment variable, never into the script text.
+      - run: uv run python -m evals.run_evals --suite "$SUITE"
         env:
+          SUITE: ${{ inputs.suite }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: eval-results
           path: evals/results/

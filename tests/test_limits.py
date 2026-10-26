@@ -14,9 +14,23 @@ from fastapi.testclient import TestClient
 from job_agent.api.app import create_app, demo_view
 from job_agent.api.limits import Limits
 from job_agent.db import connect, init_db
-from job_agent.db.queries import create_run, get_draft, get_run, set_demo_run
-from job_agent.retention import DELETED, fail_interrupted_runs, redact_old_runs
-from tests.test_api import draft_url, fake_agent, start, wait_until_finished
+from job_agent.db.queries import (
+    add_parse,
+    create_run,
+    get_draft,
+    get_run,
+    save_draft,
+    save_score,
+    set_demo_run,
+)
+from job_agent.retention import (
+    CV_FOLDER_PREFIX,
+    DELETED,
+    fail_interrupted_runs,
+    redact_old_runs,
+    remove_left_cv_files,
+)
+from tests.test_api import LETTER, draft_url, fake_agent, start, wait_until_finished
 
 T0 = datetime(2026, 10, 25, 12, 0, tzinfo=UTC)
 
@@ -102,9 +116,18 @@ def test_ip_is_stored_only_as_a_hash(tmp_path: Path, clock: Clock) -> None:
     assert Limits(salt="other").hash_ip("testclient") != stored
 
 
-@pytest.mark.parametrize(("trust_proxy", "status"), [(False, 429), (True, 201)])
-def test_forwarded_ip_only_behind_a_trusted_proxy(
-    tmp_path: Path, clock: Clock, trust_proxy: bool, status: int
+@pytest.mark.parametrize(
+    ("trusted_proxies", "forwarded", "status"),
+    [
+        (0, "203.0.113.7", 429),  # no proxy: the header is ignored, same IP as before
+        (1, "203.0.113.7", 201),  # the proxy says it is another visitor
+        # A visitor who writes the header themselves: the proxy adds the real IP
+        # on the right, and only that one counts.
+        (1, "198.51.100.1, testclient", 429),
+    ],
+)
+def test_forwarded_ip_only_from_a_trusted_proxy(
+    tmp_path: Path, clock: Clock, trusted_proxies: int, forwarded: str, status: int
 ) -> None:
     limits = Limits(runs_per_ip_per_day=1, runs_per_day=100, salt="s")
     app = create_app(
@@ -112,18 +135,16 @@ def test_forwarded_ip_only_behind_a_trusted_proxy(
         agent_runner=fake_agent,
         limits=limits,
         clock=clock,
-        trust_proxy=trust_proxy,
+        trusted_proxies=trusted_proxies,
     )
     with TestClient(app) as client:
-        run_id, auth = start(client)
+        first = {"X-Forwarded-For": "testclient"}  # what the proxy sends for this visitor
+        run_id, auth = start(client, headers=first)
         wait_until_finished(client, run_id, auth)
-        # Another visitor behind the proxy. Without trust_proxy the header is
-        # ignored (anyone could fake it), so this counts as the same IP.
-        other = {"X-Forwarded-For": "203.0.113.7"}
-        assert (
-            client.post("/api/runs", json={"goal": "Find ML jobs"}, headers=other).status_code
-            == status
+        response = client.post(
+            "/api/runs", json={"goal": "Find ML jobs"}, headers={"X-Forwarded-For": forwarded}
         )
+        assert response.status_code == status
 
 
 # The demo run
@@ -180,6 +201,9 @@ def test_old_runs_are_erased_but_the_log_stays(
 ) -> None:
     conn, run_id, draft_id = old_run
     log_before = conn.execute("SELECT * FROM approvals").fetchall()
+    job_id = get_draft(conn, draft_id)["vacancy_id"]
+    for cv_hash, created_at in [("old", T0), ("fresh", T0 + timedelta(hours=24))]:
+        save_score(conn, score_row(job_id, cv_hash, created_at.isoformat()))
 
     assert redact_old_runs(conn, T0 + timedelta(hours=23)) == 0  # not yet
     assert redact_old_runs(conn, T0 + timedelta(hours=25)) == 1
@@ -190,7 +214,8 @@ def test_old_runs_are_erased_but_the_log_stays(
     assert (draft["text"], draft["cited_facts"], draft["edited_text"]) == (DELETED, {}, None)
     assert draft["status"] == "approved"  # what happened is still known
     assert conn.execute("SELECT * FROM approvals").fetchall() == log_before
-    assert conn.execute("SELECT COUNT(*) FROM scores").fetchone()[0] == 0
+    kept = [row[0] for row in conn.execute("SELECT cv_hash FROM scores")]
+    assert kept == ["fresh"]  # the old score is gone, the one from the last day stays
     assert redact_old_runs(conn, T0 + timedelta(hours=48)) == 0  # done only once
 
 
@@ -224,3 +249,87 @@ def test_a_stopped_run_frees_the_agent(tmp_path: Path, clock: Clock) -> None:
         client.post(f"/api/runs/{run_id}/cancel", headers=auth)
         start(client)  # no need to wait 10 minutes
         client.portal.call(release.set)
+
+
+def score_row(job_id: str, cv_hash: str, created_at: str) -> dict[str, Any]:
+    return {
+        "vacancy_id": job_id,
+        "cv_hash": cv_hash,
+        "score": 50,
+        "components": "{}",
+        "matched": "[]",
+        "gaps": "[]",
+        "reasons": "",
+        "created_at": created_at,
+    }
+
+
+def test_a_draft_no_trace_shows_is_erased_too(
+    old_run: tuple[sqlite3.Connection, int, int],
+) -> None:
+    # A run stopped while a letter was written: the draft exists, the trace has no step.
+    conn, _, draft_id = old_run
+    job_id = get_draft(conn, draft_id)["vacancy_id"]
+    orphan = save_draft(
+        conn,
+        {
+            "vacancy_id": job_id,
+            "cv_hash": "h",
+            "text": LETTER,
+            "cited_facts": {},
+            "issues": [],
+            "created_at": T0.isoformat(),
+        },
+    )
+    redact_old_runs(conn, T0 + timedelta(hours=25))
+    assert get_draft(conn, orphan)["text"] == DELETED
+
+
+def test_old_cv_parses_are_forgotten(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "t.db")
+    init_db(conn)
+    add_parse(conn, "ip", T0.isoformat())
+    redact_old_runs(conn, T0 + timedelta(hours=25))
+    assert conn.execute("SELECT COUNT(*) FROM cv_parses").fetchone()[0] == 0
+
+
+def test_left_cv_folders_are_removed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("tempfile.gettempdir", lambda: str(tmp_path))
+    left = tmp_path / f"{CV_FOLDER_PREFIX}abc"
+    left.mkdir()
+    (left / "cv.yaml").write_text("name: Someone")
+    other = tmp_path / "other-folder"
+    other.mkdir()
+    remove_left_cv_files()
+    assert not left.exists() and other.exists()
+
+
+# Reading CVs
+
+
+def test_cv_reads_have_a_daily_cap_for_everyone(tmp_path: Path, clock: Clock) -> None:
+    limits = Limits(parses_per_ip_per_day=10, parses_per_day=2, salt="s")
+    with make_client(tmp_path / "t.db", limits, clock) as client:
+        for ip in ("1.1.1.1", "2.2.2.2"):
+            add_parse(connect(tmp_path / "t.db"), limits.hash_ip(ip), T0.isoformat())
+        refused = client.post("/api/cv/parse", json={"text": "x" * 60})
+    assert refused.status_code == 429
+    assert refused.json()["detail"]["reason"] == "parse_daily_limit"
+
+
+# A run that takes too long
+
+
+def test_a_run_that_takes_too_long_is_stopped(
+    tmp_path: Path, clock: Clock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("job_agent.api.app.MAX_RUN_TIME", timedelta(seconds=0.2))
+
+    async def hanging_agent(goal: str, run_id: int, conn: sqlite3.Connection, cv: Path) -> None:
+        await asyncio.sleep(30)
+
+    with make_client(tmp_path / "t.db", Limits(salt="s"), clock, hanging_agent) as client:
+        run_id, auth = start(client)
+        run = wait_until_finished(client, run_id, auth)
+    assert run["status"] == "failed"
+    assert run["error"] == "The run took too long and was stopped"

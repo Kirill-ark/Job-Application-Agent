@@ -8,7 +8,9 @@ approve anything, whatever its prompt says.
 
 One server serves one CV, given by its path. The agent starts a server per
 run, so visitors with different CVs never see each other's data, and the agent
-cannot switch the CV either: no tool takes a CV argument.
+cannot switch the CV either: no tool takes a CV argument. For the same reason
+request_approval only accepts drafts this server wrote: draft ids are counted
+up, and another visitor's draft must not be reachable by guessing its id.
 
 Tool docstrings are what the model reads to decide which tool to call, so
 they are written for the model.
@@ -90,6 +92,7 @@ def build_server(
         init_db(conn)
 
     server = MCPServer("job-agent", instructions=INSTRUCTIONS)
+    own_drafts: set[int] = set()  # drafts written by this server, i.e. in this run
 
     @server.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     def search_jobs(
@@ -154,7 +157,7 @@ def build_server(
         Args:
             job_id: The `id` of a vacancy returned by search_jobs.
 
-        Returns the score, a label (good >= 65, maybe >= 40, bad), matched
+        Returns the score, a label (good >= 65, maybe >= 30, bad), matched
         skills, gaps and a short explanation. Results are cached.
         """
         with tool_errors(), database() as conn:
@@ -186,6 +189,7 @@ def build_server(
             raise ToolError("Letters are not available: the LLM is not configured")
         with tool_errors(), database() as conn:
             result = letters.draft_cover_letter(conn, job_id, cv, taxonomy, letter_llm)
+            own_drafts.add(result["draft_id"])
             # Every draft waits for the user: queued here in code, so the agent
             # cannot forget it and does not spend a step on it.
             approval = approvals.request_approval(conn, "mark_ready", result["draft_id"])
@@ -214,7 +218,11 @@ def build_server(
         The request waits for the user's decision in the UI. Do not ask again
         and do not wait for it: finish your answer and tell the user.
         """
+        if draft_id not in own_drafts:
+            raise ToolError(f"Unknown draft {draft_id}. Use a draft_id from draft_cover_letter.")
         with tool_errors(), database() as conn:
-            return approvals.request_approval(conn, action, draft_id)
+            result = approvals.request_approval(conn, action, draft_id)
+        # The issues were already returned by draft_cover_letter.
+        return {k: v for k, v in result.items() if k != "issues"}
 
     return server

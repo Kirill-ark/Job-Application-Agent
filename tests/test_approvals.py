@@ -9,13 +9,18 @@ from job_agent.approvals import (
     ApprovalError,
     decide,
     export_letter,
-    pending_requests,
     request_approval,
 )
 from job_agent.db import connect, init_db
-from job_agent.db.queries import get_draft, save_draft, upsert_vacancies
+from job_agent.db.queries import approval_requests, get_draft, save_draft, upsert_vacancies
 
 NOW = "2026-10-24T12:00:00+00:00"
+
+
+def pending_requests(conn: sqlite3.Connection) -> list[dict]:
+    return [r for r in approval_requests(conn) if r["status"] == "pending"]
+
+
 LETTER = "Dear team,\n\nI reached 0.93 recall. [p1.f2]\n\nBest regards, Test Person"
 
 
@@ -235,3 +240,27 @@ def test_database_forbids_a_second_decision(conn: sqlite3.Connection) -> None:
             " VALUES (?, 1, 'mark_ready', 'rejected', ?)",
             (request["request_id"], NOW),
         )
+
+
+def test_two_decisions_at_once_are_an_approval_error(
+    conn: sqlite3.Connection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    draft_id = make_draft(conn)
+    request = request_approval(conn, "mark_ready", draft_id)
+    decide(conn, request["request_id"], "approved")
+    # The second click read the request before the first one was saved.
+    import job_agent.approvals as approvals
+
+    real = approvals.get_approval_request
+    monkeypatch.setattr(
+        approvals, "get_approval_request", lambda c, i: {**real(c, i), "status": "pending"}
+    )
+    with pytest.raises(ApprovalError, match="already decided"):
+        decide(conn, request["request_id"], "rejected")
+
+
+def test_refused_action_names_are_cut_short(conn: sqlite3.Connection) -> None:
+    draft_id = make_draft(conn)
+    result = request_approval(conn, "send " + "my whole CV text " * 20, draft_id)
+    assert result["status"] == "refused"
+    assert len(result["action"]) == 30

@@ -2,7 +2,7 @@
 
 Groq has an OpenAI-compatible API, so we use the `openai` SDK with Groq's
 address. Moving to another OpenAI-compatible provider (OpenRouter, Gemini,
-a local Ollama) means changing GROQ_BASE_URL and the model name.
+a local Ollama) means editing GROQ_BASE_URL below and the model names.
 """
 
 import os
@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import openai
-from dotenv import load_dotenv
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 # Groq limits tokens per minute per model, not per key, so two models double the budget.
@@ -29,8 +28,24 @@ class LLMError(Exception):
     """The LLM is not configured, not reachable, or gave no answer."""
 
 
+def _failed(error: openai.OpenAIError) -> LLMError:
+    """An LLMError with Groq's short message only.
+
+    The full error body can hold the model's partial answer (for a failed JSON
+    answer Groq sends it back), which may contain a visitor's CV. The message
+    goes into logs and traces, so the body stays out.
+    """
+    status = getattr(error, "status_code", None)
+    body = getattr(error, "body", None)
+    detail = body.get("message") if isinstance(body, dict) else None
+    if isinstance(body, dict) and isinstance(body.get("error"), dict):
+        detail = body["error"].get("message")
+    parts = [type(error).__name__, f"status {status}" if status else None, detail]
+    return LLMError("LLM request failed: " + ", ".join(p for p in parts if p))
+
+
 def _api_key() -> str:
-    load_dotenv()
+    # The entry points load .env; reading it here too would let tests find the real key.
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise LLMError("GROQ_API_KEY is not set")
@@ -70,7 +85,9 @@ def make_complete(
                 **extra,
             )
         except openai.OpenAIError as error:
-            raise LLMError(f"LLM request failed: {error}") from error
+            raise _failed(error) from error
+        if not response.choices:
+            raise LLMError("LLM returned no answer")
         text = response.choices[0].message.content
         if not text or not text.strip():
             raise LLMError("LLM returned an empty answer")
@@ -101,26 +118,41 @@ class ChatReply:
 Chat = Callable[[list[dict[str, Any]], list[dict[str, Any]]], Awaitable[ChatReply]]
 
 
-def make_chat(max_tokens: int = 2000, model: str | None = None) -> Chat:
-    """Build an async `chat` function for tool calling, backed by Groq."""
-    api_key = _api_key()
-    model = model or os.environ.get("GROQ_MODEL") or DEFAULT_MODEL
-    # More retries than for single calls: a whole agent run can hit the
-    # tokens-per-minute limit several times, and each retry waits it out.
-    client = openai.AsyncOpenAI(api_key=api_key, base_url=GROQ_BASE_URL, timeout=60, max_retries=4)
+class GroqChat:
+    """An async `chat` function for tool calling, backed by Groq.
 
-    async def chat(messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ChatReply:
+    One per agent run: an async client belongs to the event loop it was made
+    in. `aclose` closes its connections when the run is over.
+    """
+
+    def __init__(self, max_tokens: int = 2000, model: str | None = None) -> None:
+        self.max_tokens = max_tokens
+        self.model = model or os.environ.get("GROQ_MODEL") or DEFAULT_MODEL
+        # More retries than for single calls: a whole agent run can hit the
+        # tokens-per-minute limit several times, and each retry waits it out.
+        self.client = openai.AsyncOpenAI(
+            api_key=_api_key(), base_url=GROQ_BASE_URL, timeout=60, max_retries=4
+        )
+
+    async def aclose(self) -> None:
+        await self.client.close()
+
+    async def __call__(
+        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
+    ) -> ChatReply:
         try:
-            response = await client.chat.completions.create(
-                model=model,
+            response = await self.client.chat.completions.create(
+                model=self.model,
                 messages=messages,
                 tools=tools,
-                max_tokens=max_tokens,
+                max_tokens=self.max_tokens,
                 temperature=0.2,
                 reasoning_effort="low",
             )
         except openai.OpenAIError as error:
-            raise LLMError(f"LLM request failed: {error}") from error
+            raise _failed(error) from error
+        if not response.choices:
+            raise LLMError("LLM returned no answer")
         message = response.choices[0].message
         usage = response.usage
         return ChatReply(
@@ -133,4 +165,6 @@ def make_chat(max_tokens: int = 2000, model: str | None = None) -> Chat:
             completion_tokens=usage.completion_tokens if usage else 0,
         )
 
-    return chat
+
+def make_chat(max_tokens: int = 2000, model: str | None = None) -> GroqChat:
+    return GroqChat(max_tokens, model)

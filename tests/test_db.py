@@ -44,7 +44,14 @@ def make_vacancy(**changes: Any) -> dict[str, Any]:
 
 def test_init_creates_all_tables(conn: sqlite3.Connection) -> None:
     rows = conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
-    assert {row["name"] for row in rows} == {"vacancies", "scores", "drafts", "approvals", "runs"}
+    assert {row["name"] for row in rows} == {
+        "vacancies",
+        "scores",
+        "drafts",
+        "approvals",
+        "runs",
+        "cv_parses",
+    }
 
 
 def test_init_twice_keeps_data(conn: sqlite3.Connection) -> None:

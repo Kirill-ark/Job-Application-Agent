@@ -4,7 +4,7 @@ Settings come from the environment (.env):
   CV_PATH        the CV to serve (default: data/cv.yaml, the example CV)
   DATABASE_PATH  the SQLite file (default: data/job_agent.db)
   GROQ_API_KEY   without it, scores get template reasons and letters are unavailable
-  GROQ_LETTER_MODEL  model for letters (default: openai/gpt-oss-20b)
+  GROQ_LETTER_MODEL  model for letters (default: openai/gpt-oss-120b)
   REASONS_WITH_LLM   "0" for template reasons only; the agent sets it to save tokens
 
 stdout carries the MCP protocol, so logs go to stderr only.

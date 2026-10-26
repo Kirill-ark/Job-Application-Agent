@@ -33,20 +33,21 @@ import secrets
 import shutil
 import sqlite3
 import tempfile
-from collections.abc import Awaitable, Callable, Iterator
-from datetime import UTC, datetime, timedelta
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import yaml
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
 
-from job_agent.agent.loop import created_drafts, run_summary
+from job_agent.agent.loop import run_summary
 from job_agent.agent.runner import run_with_server
-from job_agent.api.limits import MESSAGES, Limits
+from job_agent.api.limits import MAX_RUN_TIME, MESSAGES, Limits
 from job_agent.approvals import ApprovalError, approval_requests, decide, export_letter
 from job_agent.approvals import request_approval as add_request
 from job_agent.cv import CV, DEFAULT_CV_PATH, cv_data
@@ -60,7 +61,9 @@ from job_agent.cv_parser import (
 )
 from job_agent.db import REPO_ROOT, connect, default_db_path, init_db
 from job_agent.db.queries import (
+    add_parse,
     create_run,
+    created_drafts,
     finish_run,
     get_draft,
     get_run,
@@ -69,7 +72,12 @@ from job_agent.db.queries import (
 )
 from job_agent.letters import strip_citations
 from job_agent.llm import DEFAULT_LETTER_MODEL, Complete, LLMError, make_chat, make_complete
-from job_agent.retention import fail_interrupted_runs, redact_old_runs
+from job_agent.retention import (
+    CV_FOLDER_PREFIX,
+    fail_interrupted_runs,
+    redact_old_runs,
+    remove_left_cv_files,
+)
 from job_agent.skills import load_taxonomy
 
 logger = logging.getLogger(__name__)
@@ -79,8 +87,16 @@ DEMO_PATH = REPO_ROOT / "data" / "demo_run.json"
 FAILED_RUN = "The agent could not run. Please try again later."
 STOPPED = "Stopped by the user"
 
-# A visitor may have the LLM read a CV this many times a day (kept in memory only).
-PARSES_PER_IP_PER_DAY = 10
+TOO_LONG = "The run took too long and was stopped"
+REDACT_EVERY = 3600  # seconds; old content is also erased on start and on every new run
+
+# Sent with every response. The page uses no inline scripts or styles, so a
+# strict policy costs nothing, and it may not be shown inside another site.
+SECURITY_HEADERS = {
+    "Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'",
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+}
 
 # (goal, run_id, connection, CV file) -> runs the agent and fills in the run.
 AgentRunner = Callable[[str, int, sqlite3.Connection, Path], Awaitable[Any]]
@@ -91,13 +107,19 @@ class RunRequest(BaseModel):
     cv: dict[str, Any] | None = None  # a confirmed parsed CV; None = the example CV
 
 
+# A parsed CV is sent back with the run. It goes into every letter prompt, so
+# its size is capped like the pasted text (as JSON it is somewhat longer).
+MAX_CV_JSON_CHARS = 2 * MAX_CV_CHARS
+MAX_BODY_BYTES = 100_000
+
+
 class ParseRequest(BaseModel):
     text: str = Field(min_length=50, max_length=MAX_CV_CHARS)
 
 
 class Decision(BaseModel):
+    # No free-text comment: the approval log is kept forever, a visitor's words are not.
     decision: Literal["approved", "rejected"]
-    comment: str | None = Field(default=None, max_length=1000)
     edited_text: str | None = Field(default=None, max_length=10_000)
 
 
@@ -150,7 +172,7 @@ def create_app(
     cv_path: Path = DEFAULT_CV_PATH,
     agent_runner: AgentRunner | None = None,
     limits: Limits | None = None,
-    trust_proxy: bool = False,
+    trusted_proxies: int = 0,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     parse_llm: Complete | None = None,
     demo_path: Path = DEMO_PATH,
@@ -158,8 +180,10 @@ def create_app(
     """Build the app. Tests pass a fake `agent_runner`, `parse_llm`, limits, a clock and a
     temporary database.
 
-    `trust_proxy`: take the visitor's IP from X-Forwarded-For. Only behind a
-    proxy that sets it (like Render's); otherwise anyone could fake their IP.
+    `trusted_proxies`: how many proxies in front of the app add themselves to
+    X-Forwarded-For (1 on Render). The visitor's IP is the entry that the
+    farthest of them added; entries left of it were sent by the visitor and
+    can be anything. 0 means no proxy: the IP of the connection is used.
     """
     db_path = db_path or default_db_path()
     limits = limits or Limits.from_env()
@@ -167,24 +191,59 @@ def create_app(
     init_db(conn)
     fail_interrupted_runs(conn, clock())  # a restart ends every run that was going
     redact_old_runs(conn, clock())
+    remove_left_cv_files()
     conn.close()
 
     async def real_agent(
         goal: str, run_id: int, conn: sqlite3.Connection, run_cv_path: Path
     ) -> None:
-        await run_with_server(goal, run_cv_path, db_path, conn, make_chat(), run_id)
+        chat = make_chat()
+        try:
+            await run_with_server(goal, run_cv_path, db_path, conn, chat, run_id)
+        finally:
+            await chat.aclose()
+
+    letter_complete: list[Complete] = []  # made on first use: tests run without an API key
 
     def real_parse_llm(system: str, user: str) -> str:
-        model = os.environ.get("GROQ_LETTER_MODEL") or DEFAULT_LETTER_MODEL
-        return make_complete(4000, CV_SCHEMA, model=model)(system, user)
+        if not letter_complete:
+            model = os.environ.get("GROQ_LETTER_MODEL") or DEFAULT_LETTER_MODEL
+            letter_complete.append(make_complete(4000, CV_SCHEMA, model=model))
+        return letter_complete[0](system, user)
 
     runner = agent_runner or real_agent
     parse = parse_llm or real_parse_llm
     taxonomy = load_taxonomy()
-    parses: dict[str, list[datetime]] = {}  # ip_hash -> times, for PARSES_PER_IP_PER_DAY
-    app = FastAPI(title="Job Application Agent")
+
+    async def redact_regularly() -> None:
+        while True:
+            await asyncio.sleep(REDACT_EVERY)
+            conn = connect(db_path)
+            try:
+                redact_old_runs(conn, clock())
+            except sqlite3.Error:
+                logger.exception("Erasing old runs failed")
+            finally:
+                conn.close()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        task = asyncio.create_task(redact_regularly())
+        yield
+        task.cancel()
+
+    app = FastAPI(title="Job Application Agent", lifespan=lifespan)
     app.state.tasks = {}  # run_id -> background task: keeps it alive, and lets it be stopped
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @app.middleware("http")
+    async def guard(request: Request, call_next: Callable) -> Response:
+        size = request.headers.get("content-length")
+        if size and (not size.isdigit() or int(size) > MAX_BODY_BYTES):
+            return JSONResponse({"detail": "The request is too large"}, status_code=413)
+        response = await call_next(request)
+        response.headers.update(SECURITY_HEADERS)
+        return response
 
     def database() -> Iterator[sqlite3.Connection]:
         conn = connect(db_path, any_thread=True)
@@ -215,21 +274,29 @@ def create_app(
         return draft
 
     def client_ip(request: Request) -> str:
-        forwarded = request.headers.get("x-forwarded-for")
-        if trust_proxy and forwarded:
-            return forwarded.split(",")[0].strip()
+        forwarded = [ip.strip() for ip in request.headers.get("x-forwarded-for", "").split(",")]
+        if trusted_proxies and len(forwarded) >= trusted_proxies and forwarded[-1]:
+            return forwarded[-trusted_proxies]
         return request.client.host if request.client else "unknown"
 
     async def run_in_background(goal: str, run_id: int, cv: CV | None) -> None:
         conn = connect(db_path)
         # A visitor's CV lives in a temporary file for this run only.
-        folder = Path(tempfile.mkdtemp(prefix="job-agent-cv-")) if cv else None
+        folder = Path(tempfile.mkdtemp(prefix=CV_FOLDER_PREFIX)) if cv else None
         try:
             run_cv_path = cv_path
             if folder and cv:
                 run_cv_path = folder / "cv.yaml"
                 run_cv_path.write_text(yaml.safe_dump(cv.model_dump()), encoding="utf-8")
-            await runner(goal, run_id, conn, run_cv_path)
+            # Ends the run itself, not only its claim on the one-run-at-a-time
+            # lock (which other runs stop respecting after MAX_RUN_TIME).
+            async with asyncio.timeout(MAX_RUN_TIME.total_seconds()):
+                await runner(goal, run_id, conn, run_cv_path)
+        except TimeoutError:
+            logger.warning("Run %s took too long", run_id)
+            run = get_run(conn, run_id)
+            if run and run["status"] == "running":
+                finish_run(conn, run_id, "failed", _now(), error=TOO_LONG)
         except Exception:
             # Also a tool server that does not start, or no LLM key.
             logger.exception("Run %s crashed", run_id)
@@ -260,6 +327,8 @@ def create_app(
             raise HTTPException(429, {"reason": reason, "message": MESSAGES[reason]})
         cv = None
         if body.cv is not None:
+            if len(json.dumps(body.cv)) > MAX_CV_JSON_CHARS:
+                raise HTTPException(422, "The CV is too long.")
             try:
                 cv = CV.model_validate(body.cv)
             except ValidationError as error:
@@ -279,16 +348,14 @@ def create_app(
         """Read a pasted CV with the LLM. Nothing is stored: the browser keeps the result."""
         now = clock()
         ip_hash = limits.hash_ip(client_ip(request))
-        recent = [t for t in parses.get(ip_hash, []) if now - t < timedelta(hours=24)]
-        if len(recent) >= PARSES_PER_IP_PER_DAY:
-            message = "You have read enough CVs for today."
-            raise HTTPException(429, {"reason": "parse_limit", "message": message})
-        if limits.refusal(conn, ip_hash, now) == "busy":  # it shares the letter model's budget
-            raise HTTPException(429, {"reason": "busy", "message": MESSAGES["busy"]})
-        parses[ip_hash] = [*recent, now]
+        reason = limits.parse_refusal(conn, ip_hash, now)
+        if reason:
+            raise HTTPException(429, {"reason": reason, "message": MESSAGES[reason]})
+        # Counted before the call: a failed read used tokens too.
+        add_parse(conn, ip_hash, now.isoformat())
         try:
             cv = drop_used_skills(parse_cv_text(body.text, parse), taxonomy)
-        except LLMError as error:  # no API key
+        except LLMError as error:  # no API key, Groq down or out of budget
             raise HTTPException(503, "Reading CVs is not available right now.") from error
         except CVParseError as error:
             raise HTTPException(422, str(error)) from error
@@ -351,7 +418,7 @@ def create_app(
             raise HTTPException(409, "This draft has no pending approval request")
         edited = body.edited_text if body.decision == "approved" else None
         try:
-            decide(conn, pending[0]["id"], body.decision, body.comment, edited)
+            decide(conn, pending[0]["id"], body.decision, edited_text=edited)
         except ApprovalError as error:
             raise HTTPException(409, str(error)) from error
         return draft_view(conn, get_draft(conn, draft_id))

@@ -4,6 +4,7 @@
   once would slow each other down to a crawl.
 - A few runs per IP per day, and a cap for everyone together. A run makes at
   most 10 agent steps and 3 letters, so counting runs also bounds LLM calls.
+- The same for reading pasted CVs, which uses the letter model's budget.
 
 IPs are never stored: only an HMAC of the IP with a secret salt, which cannot
 be turned back into the IP without the salt.
@@ -18,7 +19,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from job_agent.db.queries import count_runs_since, running_since
+from job_agent.db.queries import count_parses_since, count_runs_since, running_since
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ MESSAGES = {
     "within the free LLM limits. Please try again in a minute.",
     "ip_limit": "You have used today's runs of the demo.",
     "daily_limit": "The demo has reached its limit for today.",
+    "parse_limit": "You have read enough CVs for today.",
+    "parse_daily_limit": "Reading CVs has reached its limit for today.",
 }
 
 
@@ -40,6 +43,9 @@ class Limits:
     # Groq's free tier gives the agent model 200,000 tokens per day and a run costs
     # 10,000-23,000, so about 10 runs a day for everyone fit (found by the evals).
     runs_per_day: int = 10
+    # A CV read costs up to 2 x 7,000 tokens of the letter model.
+    parses_per_ip_per_day: int = 10
+    parses_per_day: int = 30
     salt: str = ""
 
     @classmethod
@@ -51,6 +57,8 @@ class Limits:
         return cls(
             runs_per_ip_per_day=int(os.environ.get("RUNS_PER_IP_PER_DAY", "3")),
             runs_per_day=int(os.environ.get("RUNS_PER_DAY", "10")),
+            parses_per_ip_per_day=int(os.environ.get("PARSES_PER_IP_PER_DAY", "10")),
+            parses_per_day=int(os.environ.get("PARSES_PER_DAY", "30")),
             salt=salt,
         )
 
@@ -66,4 +74,15 @@ class Limits:
             return "ip_limit"
         if count_runs_since(conn, day_ago) >= self.runs_per_day:
             return "daily_limit"
+        return None
+
+    def parse_refusal(self, conn: sqlite3.Connection, ip_hash: str, now: datetime) -> str | None:
+        """Why a CV may not be read now ('busy', 'parse_limit', 'parse_daily_limit'), or None."""
+        if running_since(conn, (now - MAX_RUN_TIME).isoformat()) is not None:
+            return "busy"  # a run needs the letter model's per-minute budget
+        day_ago = (now - DAY).isoformat()
+        if count_parses_since(conn, day_ago, ip_hash) >= self.parses_per_ip_per_day:
+            return "parse_limit"
+        if count_parses_since(conn, day_ago) >= self.parses_per_day:
+            return "parse_daily_limit"
         return None

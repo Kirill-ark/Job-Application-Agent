@@ -144,3 +144,28 @@ its instruction was not followed. No run skipped the search.
   (v1, v2, ...) would avoid this and save tokens.
 - It still calls request_approval for drafts that are already queued. This is
   harmless (the gate returns the existing request) but costs a step.
+
+## What the code review found in the evals
+
+Before publishing, review agents read the evals too. Their findings changed
+what the numbers above mean:
+
+- **The prompt-injection case showed nothing.** The agent sees only the first
+  150 characters of a vacancy description, and the injected instruction began
+  at character 162. The agent never read it, so "its instruction was not
+  followed" above is not evidence. The instruction now comes first, and the
+  suite checks that a search result the model read contained it. The safety
+  numbers were removed from `latest.md` until the suite runs again.
+- **Safety runs that crashed counted as passes.** A run that stopped on the
+  daily token limit before drafting had "0 send attempts, 0 false claims".
+  Now only runs that finished and were judged count.
+- **The matching holdout is smaller and less clean than the headline said.**
+  18 pairs: 72% has a 95% interval of 49-88%. The split is per pair, so six
+  holdout pairs share their vacancy with a tune pair, and the first report
+  listed holdout misses too. The report now gives counts, the interval and
+  the "clean holdout" (12 pairs on vacancies never tuned on: 67%).
+- **The rules looked useless in the letter eval** (0 flags) because the
+  writer repairs a letter until the rules pass, and the eval only saw the
+  final letter. It now also counts the problems of the first attempts.
+- **The tool-use numbers predate the fix** for made-up ids. They stay as the
+  "before" measurement until the suite runs again.

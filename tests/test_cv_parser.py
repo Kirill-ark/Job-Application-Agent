@@ -1,6 +1,5 @@
 import json
 import sqlite3
-import time
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +21,7 @@ from job_agent.db import connect
 from job_agent.db.queries import get_run
 from job_agent.llm import LLMError
 from job_agent.skills import load_taxonomy
-from tests.test_api import fake_agent, wait_until_finished
+from tests.test_api import fake_agent, wait_for, wait_until_finished
 
 CV_TEXT = """
 Maria Muster - Data Science student, Munich
@@ -30,7 +29,7 @@ Working student, Data at Beispiel AG, 03/2025 - today
 - Built dashboards in Python and SQL for 12 teams
 Project: Churn model with scikit-learn, reached 0.81 AUC
 Skills: Docker, Excel
-Languages: German (native), English (fluent)
+Languages: German (native), English (C1)
 """
 
 PARSED = {
@@ -97,7 +96,19 @@ def test_invalid_answer_gets_one_more_try() -> None:
 
 def test_two_bad_answers_are_an_error() -> None:
     with pytest.raises(CVParseError, match="Could not read the CV"):
+        parse_cv_text(CV_TEXT, FakeParser(LLMError("429"), "not json"))
+
+
+def test_llm_down_is_not_blamed_on_the_text() -> None:
+    with pytest.raises(LLMError):
         parse_cv_text(CV_TEXT, FakeParser("not json", LLMError("429")))
+
+
+def test_entries_without_dates_are_fine() -> None:
+    undated = json.loads(json.dumps(PARSED))
+    undated["experience"][0]["start"] = None
+    cv = parse_cv_text(CV_TEXT, FakeParser(undated))
+    assert cv.experience[0].start is None
 
 
 def test_too_long_or_empty_text() -> None:
@@ -142,9 +153,23 @@ def test_invented_tech_skill_and_number_are_flagged() -> None:
     ]
 
 
+def test_invented_employer_school_and_language_level_are_flagged() -> None:
+    invented = json.loads(json.dumps(PARSED))
+    invented["experience"][0]["company"] = "Google"
+    invented["education"] = [
+        {"degree": "B.Sc.", "institution": "MIT", "start": "2023-10", "end": None}
+    ]
+    invented["languages"][1]["level"] = "C2"
+    assert check_parsed(CV.model_validate(invented), CV_TEXT) == [
+        "employer 'Google' is not in your CV text",
+        "school 'MIT' is not in your CV text",
+        "English: the level C2 is not written in your CV text, it was guessed from the wording",
+    ]
+
+
 def test_skill_match_respects_word_boundaries() -> None:
     cv = CV.model_validate({**PARSED, "other_skills": ["R"]})
-    assert check_parsed(cv, "Skills: React, Rust") == [
+    assert check_parsed(cv, "Beispiel AG, native, C1. Skills: React, Rust") == [
         "Working student, Data at Beispiel AG: 'Python' is not in your CV text",
         "Working student, Data at Beispiel AG: 'SQL' is not in your CV text",
         "Working student, Data at Beispiel AG: the number(s) 12 in 'Built dashboards in Python "
@@ -203,10 +228,7 @@ def test_run_with_own_cv_uses_a_temporary_file(tmp_path: Path) -> None:
     with make_client(tmp_path / "t.db", FakeParser(), agent) as client:
         body = client.post("/api/runs", json={"goal": "Find data jobs", "cv": PARSED}).json()
         wait_until_finished(client, body["run_id"], {"X-Run-Token": body["token"]})
-        for _ in range(50):  # the file is removed right after the run
-            if not seen["path"].exists():
-                break
-            time.sleep(0.02)
+        wait_for(lambda: not seen["path"].exists(), "the CV file to be removed")
 
     assert seen["cv"]["name"] == "Maria Muster"
     assert not seen["path"].exists()

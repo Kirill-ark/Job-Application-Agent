@@ -14,7 +14,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     load_dotenv(REPO_ROOT / ".env")
     uvicorn.run(
-        create_app(trust_proxy=os.environ.get("TRUST_PROXY_HEADERS") == "1"),
+        create_app(trusted_proxies=int(os.environ.get("TRUST_PROXY_HEADERS") or 0)),
         host=os.environ.get("HOST", "127.0.0.1"),
         port=int(os.environ.get("PORT", "8000")),
     )

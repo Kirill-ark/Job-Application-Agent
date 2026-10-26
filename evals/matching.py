@@ -4,6 +4,7 @@ No LLM: the score and its label are computed by code, so this suite is free,
 fast and gives the same numbers on every run.
 """
 
+import math
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,18 @@ from job_agent.skills import load_taxonomy
 
 def accuracy(rows: list[dict[str, Any]]) -> float | None:
     return sum(r["expected"] == r["predicted"] for r in rows) / len(rows) if rows else None
+
+
+def interval(rows: list[dict[str, Any]]) -> tuple[float, float] | None:
+    """95% Wilson interval of the accuracy: with 18 pairs, 72% means "somewhere
+    between about 50% and 88%", and the report should say so."""
+    n = len(rows)
+    if not n:
+        return None
+    p, z = accuracy(rows), 1.96
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    spread = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    return max(0.0, centre - spread), min(1.0, centre + spread)
 
 
 def confusion(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
@@ -57,10 +70,21 @@ def run() -> dict[str, Any]:
         name: [r for r in rows if name == "all" or r["split"] == name]
         for name in ("all", "tune", "holdout")
     }
+    # The split is per pair, and some vacancies have one CV in tune and the
+    # other in holdout. Those holdout pairs share the vacancy with a tuned one;
+    # the clean ones are on vacancies the tuning never saw.
+    tuned_vacancies = {r["vacancy"] for r in splits["tune"]}
+    splits["clean holdout"] = [r for r in splits["holdout"] if r["vacancy"] not in tuned_vacancies]
     labels = list(LABELS)
     return {
         "pairs": len(rows),
+        "counts": {name: len(part) for name, part in splits.items()},
+        "correct": {
+            name: sum(r["expected"] == r["predicted"] for r in part)
+            for name, part in splits.items()
+        },
         "accuracy": {name: accuracy(part) for name, part in splits.items()},
+        "interval": {name: interval(part) for name, part in splits.items()},
         # Mean recall over the three labels: an always-"bad" system would get 1/3,
         # while its plain accuracy would look good because most pairs are bad.
         "balanced_accuracy": {

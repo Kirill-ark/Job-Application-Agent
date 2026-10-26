@@ -270,6 +270,24 @@ def running_since(conn: sqlite3.Connection, since: str) -> int | None:
     return row[0] if row else None
 
 
+def add_parse(conn: sqlite3.Connection, ip_hash: str, created_at: str) -> None:
+    with conn:
+        conn.execute(
+            "INSERT INTO cv_parses (ip_hash, created_at) VALUES (?, ?)", (ip_hash, created_at)
+        )
+
+
+def count_parses_since(conn: sqlite3.Connection, since: str, ip_hash: str | None = None) -> int:
+    """CVs read after `since`, from one IP or from everyone."""
+    if ip_hash is None:
+        return conn.execute(
+            "SELECT COUNT(*) FROM cv_parses WHERE created_at > ?", (since,)
+        ).fetchone()[0]
+    return conn.execute(
+        "SELECT COUNT(*) FROM cv_parses WHERE created_at > ? AND ip_hash = ?", (since, ip_hash)
+    ).fetchone()[0]
+
+
 def set_demo_run(conn: sqlite3.Connection, run_id: int) -> None:
     """Make this run the one saved demo run."""
     with conn:
@@ -277,6 +295,10 @@ def set_demo_run(conn: sqlite3.Connection, run_id: int) -> None:
         conn.execute("UPDATE runs SET is_demo = 1 WHERE id = ?", (run_id,))
 
 
-def demo_run_id(conn: sqlite3.Connection) -> int | None:
-    row = conn.execute("SELECT id FROM runs WHERE is_demo = 1").fetchone()
-    return row[0] if row else None
+def created_drafts(trace: list[dict[str, Any]]) -> list[int]:
+    """Ids of the drafts a run created, according to its trace."""
+    return [
+        step["result"]["draft_id"]
+        for step in trace
+        if step["kind"] == "tool" and step["tool"] == "draft_cover_letter" and step["ok"]
+    ]

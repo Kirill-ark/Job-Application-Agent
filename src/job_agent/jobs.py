@@ -85,7 +85,13 @@ def detect_level(title: str, job_types: list[str]) -> str:
 
 
 def normalize_arbeitnow(raw: dict[str, Any], fetched_at: str) -> dict[str, Any]:
-    """Turn one Arbeitnow job into our vacancy dict."""
+    """Turn one Arbeitnow job into our vacancy dict.
+
+    The URL becomes a link on the page, so only https links are accepted
+    (a "javascript:" URL would run code when clicked).
+    """
+    if not str(raw["url"]).startswith("https://"):
+        raise ValueError(f"not an https URL: {raw['url']!r}")
     return {
         "id": raw["slug"],
         "title": raw["title"],
@@ -121,7 +127,13 @@ def fetch_arbeitnow(client: httpx.Client, pages: int = PAGES_TO_FETCH) -> list[d
 def refresh_cache(conn: sqlite3.Connection, client: httpx.Client, now: datetime) -> int:
     """Download fresh jobs into the cache. Returns how many were stored."""
     fetched_at = now.isoformat()
-    vacancies = [normalize_arbeitnow(raw, fetched_at) for raw in fetch_arbeitnow(client)]
+    vacancies = []
+    for raw in fetch_arbeitnow(client):
+        try:
+            vacancies.append(normalize_arbeitnow(raw, fetched_at))
+        except (KeyError, TypeError, ValueError) as error:
+            # One broken job must not stop the search for all the others.
+            log.warning("Skipping a malformed job %r: %s", raw.get("slug"), error)
     upsert_vacancies(conn, vacancies)
     return len(vacancies)
 

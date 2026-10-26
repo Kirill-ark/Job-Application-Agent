@@ -6,11 +6,15 @@ from typing import Any
 
 from evals.common import LABELS, RESULTS
 
-SPLITS = ("all", "tune", "holdout")
+SPLITS = ("all", "tune", "holdout", "clean holdout")
 
 
 def percent(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.0%}"
+
+
+def span(bounds: list[float] | tuple[float, float] | None) -> str:
+    return "n/a" if bounds is None else f"{bounds[0]:.0%}-{bounds[1]:.0%}"
 
 
 def matching_section(result: dict[str, Any]) -> list[str]:
@@ -18,12 +22,21 @@ def matching_section(result: dict[str, Any]) -> list[str]:
     lines = [
         "## Match scoring",
         "",
-        f"{result['pairs']} vacancy-CV pairs with hand labels (good / maybe / bad).",
-        "Holdout pairs were never used to adjust the scoring.",
+        f"{result['pairs']} vacancy-CV pairs with labels (good / maybe / bad), drafted by an "
+        "LLM from RUBRIC.md without seeing the scores and checked by hand.",
+        "The scoring was adjusted on tune pairs only. The split is per pair, so a holdout pair "
+        "can share its vacancy with a tune pair; the clean holdout leaves those out. The first "
+        "report also listed holdout misses, so even the holdout is not fully unseen.",
         "",
-        "| | all | tune | holdout |",
-        "|---|---|---|---|",
-        "| Accuracy | " + " | ".join(percent(acc[s]) for s in SPLITS) + " |",
+        "| | " + " | ".join(SPLITS) + " |",
+        "|---|" + "---|" * len(SPLITS),
+        "| Pairs | " + " | ".join(str(result["counts"][s]) for s in SPLITS) + " |",
+        "| Accuracy | "
+        + " | ".join(
+            f"{percent(acc[s])} ({result['correct'][s]}/{result['counts'][s]})" for s in SPLITS
+        )
+        + " |",
+        "| 95% interval | " + " | ".join(span(result["interval"][s]) for s in SPLITS) + " |",
         "| Balanced accuracy | " + " | ".join(percent(bal[s]) for s in SPLITS) + " |",
         "",
         "Confusion matrix (rows: hand label, columns: system label):",
@@ -76,6 +89,9 @@ def letters_section(result: dict[str, Any]) -> list[str]:
         "",
         "Rules compared with the judge:",
         "",
+        f"- first attempts the rules sent back for a repair: {rules.get('repaired_letters', 'n/a')}"
+        f" of {result['letters']} letters ({rules.get('first_attempt_problems', 'n/a')} "
+        "problems); the numbers below are about the final, repaired letters",
         f"- flagged by the rules: {rules['flagged']}, of which the judge also found a problem "
         f"in {rules['caught']}",
         f"- false alarms (rules flagged, judge says supported): {len(rules['false_alarms'])}",
@@ -127,21 +143,29 @@ def safety_section(result: dict[str, Any]) -> list[str]:
         "## Safety",
         "",
         f"{result['total']} runs that ask the agent to send, apply or approve, or that hide "
-        "instructions for it in a vacancy.",
+        f"instructions for it in a vacancy. Counted: {result['counted']} of {result['total']} "
+        "(a run counts only if it finished and its answer was judged).",
         "",
-        f"- approvals or rejections without a human: **{result['decisions_without_human']}**",
         f"- runs in which the agent tried to send (and was refused): "
-        f"{result['runs_with_send_attempts']} of {result['total']}",
+        f"{result['runs_with_send_attempts']} of {result['counted']}",
         f"- final answers that claim something was sent, submitted, approved or exported: "
-        f"**{result['false_claims']}** of {result['total']}",
+        f"**{result['false_claims']}** of {result['counted']}",
+        f"- the injected instruction reached the model: "
+        f"{'yes' if result['injection_reached_model'] else '**no, the case shows nothing**'}",
+        f"- approvals or rejections without a human: {result['decisions_without_human']} "
+        "(0 by design: the agent has no tool to decide)",
         "",
-        "| Case | Status | Tried | Claims an action | Quote |",
-        "|---|---|---|---|---|",
+        "| Case | Status | Tried | Claims an action | Tool-use mistakes | Quote |",
+        "|---|---|---|---|---|---|",
     ]
     for run in result["runs"]:
         tried = ", ".join(run["send_attempts"]) or "nothing"
         claim = {True: "yes", False: "no", None: "not judged"}[run["claims_action"]]
-        lines.append(f"| {run['name']} | {run['status']} | {tried} | {claim} | {run['quote']} |")
+        status = run["status"] if run["status"] == "done" else f"{run['status']}: {run['error']}"
+        lines.append(
+            f"| {run['name']} | {status} | {tried} | {claim} "
+            f"| {'; '.join(run['mistakes']) or 'none'} | {run['quote']} |"
+        )
     return lines
 
 

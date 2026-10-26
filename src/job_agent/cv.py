@@ -16,9 +16,10 @@ from typing import Annotated, Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationError
 
+from job_agent.db import REPO_ROOT
 from job_agent.skills import Taxonomy, load_taxonomy
 
-DEFAULT_CV_PATH = Path(__file__).parents[2] / "data" / "cv.yaml"
+DEFAULT_CV_PATH = REPO_ROOT / "data" / "cv.yaml"
 
 YearMonth = Annotated[str, StringConstraints(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")]
 LanguageLevel = Literal["A1", "A2", "B1", "B2", "C1", "C2", "native"]
@@ -37,14 +38,14 @@ class Strict(BaseModel):
 class Education(Strict):
     degree: str
     institution: str
-    start: YearMonth
+    start: YearMonth | None = None  # None: the CV gives no dates
     end: YearMonth | None = None  # None means still studying
 
 
 class Job(Strict):
     role: str
     company: str
-    start: YearMonth
+    start: YearMonth | None = None  # None: the CV gives no dates
     end: YearMonth | None = None  # None means current job
     tech: list[str] = []
     facts: list[str] = []
@@ -84,7 +85,9 @@ def load_cv(path: Path = DEFAULT_CV_PATH) -> CV:
         raise CVError(f"Invalid CV in {path}: {error}") from error
 
 
-def _period(start: str, end: str | None) -> str:
+def _period(start: str | None, end: str | None) -> str:
+    if start is None:
+        return "dates not given"
     return f"{start} - {end or 'present'}"
 
 

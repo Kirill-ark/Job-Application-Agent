@@ -9,6 +9,7 @@ from mcp import Client
 from mcp.server.mcpserver import MCPServer
 
 from job_agent.cv import DEFAULT_CV_PATH
+from job_agent.matching import GOOD_FROM, MAYBE_FROM
 from job_agent.mcp_server.server import build_server
 from tests.test_jobs import FakeArbeitnow
 
@@ -152,6 +153,43 @@ async def test_unknown_draft_is_explained(server: MCPServer) -> None:
     async with Client(server) as client:
         text = await error_text(client, "request_approval", action="mark_ready", draft_id=-1)
     assert "Unknown draft" in text
+
+
+async def test_drafts_of_another_run_are_unknown(tmp_path: Path) -> None:
+    # Draft ids are counted up: a visitor must not reach another run's draft by guessing.
+    def make() -> MCPServer:
+        return build_server(
+            tmp_path / "t.db",
+            DEFAULT_CV_PATH,
+            letter_llm=fake_letter,
+            http_client=FakeArbeitnow().client(),
+        )
+
+    async with Client(make()) as client:
+        await call(client, "search_jobs", query="machine learning")
+        theirs = await call(client, "draft_cover_letter", job_id=JOB)
+    async with Client(make()) as client:
+        text = await error_text(
+            client, "request_approval", action="send", draft_id=theirs["draft_id"]
+        )
+    assert "Unknown draft" in text
+
+
+async def test_approval_result_has_no_letter_sentences(server: MCPServer) -> None:
+    async with Client(server) as client:
+        await call(client, "search_jobs", query="machine learning")
+        draft = await call(client, "draft_cover_letter", job_id=JOB)
+        result = await call(
+            client, "request_approval", action="mark_ready", draft_id=draft["draft_id"]
+        )
+    assert "issues" not in result
+
+
+async def test_score_thresholds_in_the_description_are_the_real_ones(server: MCPServer) -> None:
+    async with Client(server) as client:
+        tools = {t.name: t for t in (await client.list_tools()).tools}
+    description = tools["score_match"].description
+    assert f"good >= {GOOD_FROM}" in description and f"maybe >= {MAYBE_FROM}" in description
 
 
 async def test_crash_details_stay_on_the_server(tmp_path: Path) -> None:

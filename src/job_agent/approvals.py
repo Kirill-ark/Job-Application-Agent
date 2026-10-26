@@ -30,6 +30,7 @@ from job_agent.db.queries import (
 from job_agent.letters import strip_citations
 
 ACTIONS = ("mark_ready", "export")
+MAX_ACTION_CHARS = 30
 REFUSAL = (
     "Refused: the agent never sends anything or contacts anyone. "
     "Allowed actions are mark_ready and export; the user sends the letter themselves."
@@ -72,7 +73,8 @@ def request_approval(
                 conn,
                 {
                     "draft_id": draft_id,
-                    "action": action,
+                    # The log is kept forever, so free text from the agent is cut short.
+                    "action": action[:MAX_ACTION_CHARS],
                     "event": "refused",
                     "comment": REFUSAL,
                     "created_at": _now(now),
@@ -136,26 +138,25 @@ def decide(
         raise ApprovalError("edited_text is empty")
 
     timestamp = _now(now)
-    with conn:  # the log row and the draft status change together or not at all
-        add_approval_event(
-            conn,
-            {
-                "request_id": request_id,
-                "draft_id": request["draft_id"],
-                "action": request["action"],
-                "event": decision,
-                "comment": comment,
-                "created_at": timestamp,
-            },
-        )
-        if request["action"] == "mark_ready":
-            set_draft_status(conn, request["draft_id"], decision, timestamp, edited_text)
+    try:
+        with conn:  # the log row and the draft status change together or not at all
+            add_approval_event(
+                conn,
+                {
+                    "request_id": request_id,
+                    "draft_id": request["draft_id"],
+                    "action": request["action"],
+                    "event": decision,
+                    "comment": comment,
+                    "created_at": timestamp,
+                },
+            )
+            if request["action"] == "mark_ready":
+                set_draft_status(conn, request["draft_id"], decision, timestamp, edited_text)
+    except sqlite3.IntegrityError as error:
+        # Two clicks at once: both passed the check above, the database lets one win.
+        raise ApprovalError(f"Request {request_id} is already decided") from error
     return get_approval_request(conn, request_id)
-
-
-def pending_requests(conn: sqlite3.Connection) -> list[dict[str, Any]]:
-    """Requests that wait for the user, oldest first. The UI shows these."""
-    return [r for r in approval_requests(conn) if r["status"] == "pending"]
 
 
 def export_letter(conn: sqlite3.Connection, draft_id: int) -> str:

@@ -16,10 +16,12 @@ The full results stay in the trace.
 Limits are enforced here in code, not only asked for in the prompt:
 MAX_STEPS LLM calls, MAX_LETTERS letters, MAX_FAILED_STEPS steps in a row in which
 every tool call failed. The same goes for the order of the work: the tools that
-take a vacancy id are offered only after a search has returned some ids.
+take a vacancy id are offered only after a search has returned some ids, and
+they only accept ids that a search of this run returned.
 """
 
 import json
+import logging
 import sqlite3
 import time
 from collections.abc import Callable
@@ -29,8 +31,16 @@ from typing import Any
 from mcp import Client
 
 from job_agent.approvals import approval_requests
-from job_agent.db.queries import create_run, finish_run, get_draft, get_run, save_trace
+from job_agent.db.queries import (
+    create_run,
+    finish_run,
+    get_draft,
+    get_run,
+    save_trace,
+)
 from job_agent.llm import Chat, ChatReply, LLMError, ToolCall
+
+logger = logging.getLogger(__name__)
 
 MAX_STEPS = 10
 MAX_LETTERS = 3
@@ -141,12 +151,21 @@ class Run:
         self.on_step = on_step
         self.trace: list[dict[str, Any]] = []
         self.letters = 0
-        self.searched = False  # a search_jobs call has succeeded
+        self.found: set[str] = set()  # vacancy ids the searches of this run returned
         self.failed_steps = 0  # steps in a row in which every call failed
+
+    @property
+    def searched(self) -> bool:
+        return bool(self.found)
 
     def record(self, step: dict[str, Any]) -> None:
         self.trace.append(step)
-        save_trace(self.conn, self.run_id, self.trace)
+        try:
+            save_trace(self.conn, self.run_id, self.trace)
+        except sqlite3.OperationalError:
+            # The database is busy (the tool server writes the vacancy cache in
+            # one go). The full trace is saved again with the next step.
+            logger.warning("Could not save the trace of run %s yet", self.run_id)
         if self.on_step:
             self.on_step(step)
 
@@ -169,20 +188,33 @@ async def call_tool(client: Client, run: Run, names: set[str], call: ToolCall) -
         error = "The arguments are not a JSON object"
     elif call.name in NEED_SEARCH and not run.searched:
         error = "Call search_jobs first: vacancy ids come only from its results"
+    elif call.name in NEED_SEARCH and arguments.get("job_id") not in run.found:
+        error = (
+            f"Unknown vacancy {arguments.get('job_id')!r}: use an id exactly as search_jobs "
+            "returned it in this run"
+        )
     elif call.name == "draft_cover_letter" and run.letters >= MAX_LETTERS:
         error = f"Letter limit reached: at most {MAX_LETTERS} letters per run"
     else:
         if call.name == "draft_cover_letter":
             run.letters += 1  # counted when tried: a failed letter cost tokens too
-        result = await client.call_tool(call.name, arguments)
-        error = result.content[0].text if result.is_error else None
+        try:
+            result = await client.call_tool(call.name, arguments)
+        except Exception as failure:  # the tool server broke; the model may still finish
+            logger.exception("Tool %s failed in run %s", call.name, run.run_id)
+            result, error = None, f"The tool failed: {type(failure).__name__}"
+        else:
+            error = None
+            if result.is_error:
+                error = result.content[0].text if result.content else "The tool failed"
 
     step["duration_ms"] = round((time.monotonic() - started) * 1000)
     if error:
         run.record({**step, "ok": False, "error": error})
         return f"ERROR: {error}", f"ERROR: {error}"
     data = result.structured_content
-    run.searched = run.searched or call.name == "search_jobs"
+    if call.name == "search_jobs":
+        run.found |= {job["id"] for job in data["jobs"]}
     run.record({**step, "ok": True, "result": data})
     return to_json(data), shorten(call.name, data)
 
@@ -255,15 +287,6 @@ async def run_agent(
 
     finish_run(conn, run.run_id, status, _now(), answer, error)
     return run_summary(conn, run.run_id)
-
-
-def created_drafts(trace: list[dict[str, Any]]) -> list[int]:
-    """Ids of the drafts a run created, according to its trace."""
-    return [
-        step["result"]["draft_id"]
-        for step in trace
-        if step["kind"] == "tool" and step["tool"] == "draft_cover_letter" and step["ok"]
-    ]
 
 
 def run_summary(conn: sqlite3.Connection, run_id: int) -> dict[str, Any]:

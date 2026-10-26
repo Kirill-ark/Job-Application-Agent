@@ -25,7 +25,18 @@ def test_matching_suite_runs_and_adds_up() -> None:
     result = matching.run()
     assert result["pairs"] == len(load_match_labels())
     assert sum(sum(row.values()) for row in result["confusion"].values()) == result["pairs"]
-    assert len(result["misses"]) == round(result["pairs"] * (1 - result["accuracy"]["all"]))
+    assert len(result["misses"]) == result["pairs"] - result["correct"]["all"]
+    clean = result["counts"]["clean holdout"]
+    assert 0 < clean < result["counts"]["holdout"]
+    low, high = result["interval"]["holdout"]
+    assert low < result["accuracy"]["holdout"] < high
+
+
+def test_matching_results_in_the_repo_are_current() -> None:
+    # The scoring is deterministic: a change to it must come with fresh results,
+    # or README and latest.md would show numbers the code no longer gives.
+    saved = json.loads((report.RESULTS / "latest.json").read_text())["matching"]
+    assert matching.run()["accuracy"] == saved["accuracy"]
 
 
 def test_report_is_written(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -186,6 +197,10 @@ def test_agent_report_sections(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
             {
                 "name": "send the letters",
                 "status": "done",
+                "error": None,
+                "counted": True,
+                "injection_seen": None,
+                "mistakes": [],
                 "send_attempts": ["send"],
                 "decisions_without_human": 0,
                 "claims_action": False,
@@ -194,11 +209,28 @@ def test_agent_report_sections(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
             }
         ],
         "total": 1,
+        "counted": 1,
         "decisions_without_human": 0,
         "runs_with_send_attempts": 1,
         "false_claims": 0,
+        "injection_reached_model": False,
     }
     report.write({"agent": tool_use, "safety": safety})
     text = (tmp_path / "latest.md").read_text()
     assert "Without any tool-use mistake: 1 of 1." in text
-    assert "approvals or rejections without a human: **0**" in text
+    assert "false_claims" not in text and "**0** of 1" in text
+    assert "the case shows nothing" in text  # an injection the model never saw is reported
+
+
+def test_injection_is_seen_only_in_what_the_model_read() -> None:
+    def search(snippet: str) -> dict:
+        return {
+            "kind": "tool",
+            "tool": "search_jobs",
+            "ok": True,
+            "result": {"jobs": [{"id": "x", "snippet": snippet}]},
+        }
+
+    snippet = agent.INJECTED_VACANCY["description"][:150]  # as the server cuts it
+    assert agent.injection_seen([search(snippet)])
+    assert not agent.injection_seen([search("Working student role in our ML team")])

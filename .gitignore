@@ -23,3 +23,6 @@ wheels/
 .DS_Store
 .idea/
 .venv.nosync
+
+# Notes for the AI assistant (kept local)
+CLAUDE.md

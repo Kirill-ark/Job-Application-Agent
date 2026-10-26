@@ -20,6 +20,7 @@ from job_agent.letters import (
     numbers_in,
     render,
     strip_citations,
+    write_letter,
 )
 from job_agent.llm import LLMError
 from job_agent.skills import Skill, Taxonomy
@@ -301,6 +302,13 @@ def test_one_repair_fixes_the_letter(
     assert result["grounded"] is True
     assert len(llm.prompts) == 2
     assert "uses numbers that are not in the cited facts: 95" in llm.prompts[1]
+
+
+def test_every_attempt_is_reported_for_the_evals(cv: dict[str, Any], taxonomy: Taxonomy) -> None:
+    bad = with_body(claim("It reached 95% recall.", "p1.f2"))
+    attempts: list[list[dict[str, str]]] = []
+    write_letter("prompt", cv, taxonomy, TITLE, FakeLLM(bad, GOOD_LETTER), attempts)
+    assert [len(a) for a in attempts] == [1, 0]  # the rules caught one, the repair fixed it
 
 
 def test_problems_left_after_repair_are_saved(
